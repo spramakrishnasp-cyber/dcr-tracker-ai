@@ -15,7 +15,7 @@ import { exportReportsPdf, exportReportsCsv } from "@/lib/pdf";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_app/reports")({
+export const Route = createFileRoute("/_app/reports/")({
   component: Reports,
 });
 

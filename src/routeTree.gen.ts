@@ -12,10 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppReportsRouteImport } from './routes/_app.reports'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCustomersRouteImport } from './routes/_app.customers'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
+import { Route as AppReportsIndexRouteImport } from './routes/_app.reports.index'
 import { Route as AppReportsNewRouteImport } from './routes/_app.reports.new'
 
 const LoginRoute = LoginRouteImport.update({
@@ -32,11 +32,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppReportsRoute = AppReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -52,10 +47,15 @@ const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsIndexRoute = AppReportsIndexRouteImport.update({
+  id: '/reports/',
+  path: '/reports/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppReportsNewRoute = AppReportsNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => AppReportsRoute,
+  id: '/reports/new',
+  path: '/reports/new',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -64,8 +64,8 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AppAnalyticsRoute
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
-  '/reports': typeof AppReportsRouteWithChildren
   '/reports/new': typeof AppReportsNewRoute
+  '/reports/': typeof AppReportsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -73,8 +73,8 @@ export interface FileRoutesByTo {
   '/analytics': typeof AppAnalyticsRoute
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
-  '/reports': typeof AppReportsRouteWithChildren
   '/reports/new': typeof AppReportsNewRoute
+  '/reports': typeof AppReportsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -84,8 +84,8 @@ export interface FileRoutesById {
   '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/customers': typeof AppCustomersRoute
   '/_app/dashboard': typeof AppDashboardRoute
-  '/_app/reports': typeof AppReportsRouteWithChildren
   '/_app/reports/new': typeof AppReportsNewRoute
+  '/_app/reports/': typeof AppReportsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -95,8 +95,8 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/customers'
     | '/dashboard'
-    | '/reports'
     | '/reports/new'
+    | '/reports/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -104,8 +104,8 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/customers'
     | '/dashboard'
-    | '/reports'
     | '/reports/new'
+    | '/reports'
   id:
     | '__root__'
     | '/'
@@ -114,8 +114,8 @@ export interface FileRouteTypes {
     | '/_app/analytics'
     | '/_app/customers'
     | '/_app/dashboard'
-    | '/_app/reports'
     | '/_app/reports/new'
+    | '/_app/reports/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -147,13 +147,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/reports': {
-      id: '/_app/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof AppReportsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -175,40 +168,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAnalyticsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/reports/': {
+      id: '/_app/reports/'
+      path: '/reports'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof AppReportsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/reports/new': {
       id: '/_app/reports/new'
-      path: '/new'
+      path: '/reports/new'
       fullPath: '/reports/new'
       preLoaderRoute: typeof AppReportsNewRouteImport
-      parentRoute: typeof AppReportsRoute
+      parentRoute: typeof AppRoute
     }
   }
 }
-
-interface AppReportsRouteChildren {
-  AppReportsNewRoute: typeof AppReportsNewRoute
-}
-
-const AppReportsRouteChildren: AppReportsRouteChildren = {
-  AppReportsNewRoute: AppReportsNewRoute,
-}
-
-const AppReportsRouteWithChildren = AppReportsRoute._addFileChildren(
-  AppReportsRouteChildren,
-)
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCustomersRoute: typeof AppCustomersRoute
   AppDashboardRoute: typeof AppDashboardRoute
-  AppReportsRoute: typeof AppReportsRouteWithChildren
+  AppReportsNewRoute: typeof AppReportsNewRoute
+  AppReportsIndexRoute: typeof AppReportsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppCustomersRoute: AppCustomersRoute,
   AppDashboardRoute: AppDashboardRoute,
-  AppReportsRoute: AppReportsRouteWithChildren,
+  AppReportsNewRoute: AppReportsNewRoute,
+  AppReportsIndexRoute: AppReportsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -221,3 +211,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
