@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppReportsRouteImport } from './routes/_app.reports'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCustomersRouteImport } from './routes/_app.customers'
+import { Route as AppReportsNewRouteImport } from './routes/_app.reports.new'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -45,20 +46,27 @@ const AppCustomersRoute = AppCustomersRouteImport.update({
   path: '/customers',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsNewRoute = AppReportsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppReportsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
-  '/reports': typeof AppReportsRoute
+  '/reports': typeof AppReportsRouteWithChildren
+  '/reports/new': typeof AppReportsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
-  '/reports': typeof AppReportsRoute
+  '/reports': typeof AppReportsRouteWithChildren
+  '/reports/new': typeof AppReportsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -67,13 +75,20 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/customers': typeof AppCustomersRoute
   '/_app/dashboard': typeof AppDashboardRoute
-  '/_app/reports': typeof AppReportsRoute
+  '/_app/reports': typeof AppReportsRouteWithChildren
+  '/_app/reports/new': typeof AppReportsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/customers' | '/dashboard' | '/reports'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/customers'
+    | '/dashboard'
+    | '/reports'
+    | '/reports/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/customers' | '/dashboard' | '/reports'
+  to: '/' | '/login' | '/customers' | '/dashboard' | '/reports' | '/reports/new'
   id:
     | '__root__'
     | '/'
@@ -82,6 +97,7 @@ export interface FileRouteTypes {
     | '/_app/customers'
     | '/_app/dashboard'
     | '/_app/reports'
+    | '/_app/reports/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -134,19 +150,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCustomersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/reports/new': {
+      id: '/_app/reports/new'
+      path: '/new'
+      fullPath: '/reports/new'
+      preLoaderRoute: typeof AppReportsNewRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
   }
 }
+
+interface AppReportsRouteChildren {
+  AppReportsNewRoute: typeof AppReportsNewRoute
+}
+
+const AppReportsRouteChildren: AppReportsRouteChildren = {
+  AppReportsNewRoute: AppReportsNewRoute,
+}
+
+const AppReportsRouteWithChildren = AppReportsRoute._addFileChildren(
+  AppReportsRouteChildren,
+)
 
 interface AppRouteChildren {
   AppCustomersRoute: typeof AppCustomersRoute
   AppDashboardRoute: typeof AppDashboardRoute
-  AppReportsRoute: typeof AppReportsRoute
+  AppReportsRoute: typeof AppReportsRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppCustomersRoute: AppCustomersRoute,
   AppDashboardRoute: AppDashboardRoute,
-  AppReportsRoute: AppReportsRoute,
+  AppReportsRoute: AppReportsRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
