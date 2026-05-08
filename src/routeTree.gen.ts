@@ -16,6 +16,7 @@ import { Route as AppReportsRouteImport } from './routes/_app.reports'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCustomersRouteImport } from './routes/_app.customers'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
+import { Route as AppReportsIndexRouteImport } from './routes/_app.reports.index'
 import { Route as AppReportsNewRouteImport } from './routes/_app.reports.new'
 
 const LoginRoute = LoginRouteImport.update({
@@ -52,6 +53,11 @@ const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsIndexRoute = AppReportsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppReportsRoute,
+} as any)
 const AppReportsNewRoute = AppReportsNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/reports': typeof AppReportsRouteWithChildren
   '/reports/new': typeof AppReportsNewRoute
+  '/reports/': typeof AppReportsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -73,8 +80,8 @@ export interface FileRoutesByTo {
   '/analytics': typeof AppAnalyticsRoute
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
-  '/reports': typeof AppReportsRouteWithChildren
   '/reports/new': typeof AppReportsNewRoute
+  '/reports': typeof AppReportsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,6 +93,7 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/reports': typeof AppReportsRouteWithChildren
   '/_app/reports/new': typeof AppReportsNewRoute
+  '/_app/reports/': typeof AppReportsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +105,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/reports'
     | '/reports/new'
+    | '/reports/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -104,8 +113,8 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/customers'
     | '/dashboard'
-    | '/reports'
     | '/reports/new'
+    | '/reports'
   id:
     | '__root__'
     | '/'
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/reports'
     | '/_app/reports/new'
+    | '/_app/reports/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -175,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAnalyticsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/reports/': {
+      id: '/_app/reports/'
+      path: '/'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof AppReportsIndexRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
     '/_app/reports/new': {
       id: '/_app/reports/new'
       path: '/new'
@@ -187,10 +204,12 @@ declare module '@tanstack/react-router' {
 
 interface AppReportsRouteChildren {
   AppReportsNewRoute: typeof AppReportsNewRoute
+  AppReportsIndexRoute: typeof AppReportsIndexRoute
 }
 
 const AppReportsRouteChildren: AppReportsRouteChildren = {
   AppReportsNewRoute: AppReportsNewRoute,
+  AppReportsIndexRoute: AppReportsIndexRoute,
 }
 
 const AppReportsRouteWithChildren = AppReportsRoute._addFileChildren(
