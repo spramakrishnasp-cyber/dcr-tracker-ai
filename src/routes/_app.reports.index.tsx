@@ -79,7 +79,7 @@ function Reports() {
           <Button variant="outline" onClick={() => exportReportsPdf({
             reports: filtered, customers, profiles,
             title: "Call Report",
-            subtitle: `${from || "All time"} → ${to || "Now"}${empId !== "all" ? ` · ${pMap.get(empId)?.full_name ?? ""}` : ""}`,
+            subtitle: `${from || "All time"} to ${to || "Now"}${empId !== "all" ? ` - ${pMap.get(empId)?.full_name ?? ""}` : ""}`,
           })}>
             <FileDown className="h-4 w-4 mr-1" /> PDF
           </Button>
