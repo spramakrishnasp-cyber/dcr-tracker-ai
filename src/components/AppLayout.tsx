@@ -8,6 +8,7 @@ import {
   BarChart3,
   LogOut,
   Menu,
+  DatabaseBackup,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -19,6 +20,7 @@ const nav = [
   { to: "/reports", label: "Call Reports", icon: PhoneCall },
   { to: "/reports/new", label: "New Report", icon: FileText },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/settings", label: "Backup & Restore", icon: DatabaseBackup },
 ] as const;
 
 export function AppLayout() {
