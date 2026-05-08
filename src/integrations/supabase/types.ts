@@ -14,16 +14,197 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      call_reports: {
+        Row: {
+          attachment_url: string | null
+          call_date: string
+          call_time: string
+          created_at: string
+          customer_id: string | null
+          discussion: string | null
+          id: string
+          location: string | null
+          meeting_outcome: string | null
+          meeting_type: Database["public"]["Enums"]["meeting_type"]
+          next_follow_up: string | null
+          order_status: Database["public"]["Enums"]["order_status"]
+          product_discussed: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          call_date?: string
+          call_time?: string
+          created_at?: string
+          customer_id?: string | null
+          discussion?: string | null
+          id?: string
+          location?: string | null
+          meeting_outcome?: string | null
+          meeting_type: Database["public"]["Enums"]["meeting_type"]
+          next_follow_up?: string | null
+          order_status?: Database["public"]["Enums"]["order_status"]
+          product_discussed?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attachment_url?: string | null
+          call_date?: string
+          call_time?: string
+          created_at?: string
+          customer_id?: string | null
+          discussion?: string | null
+          id?: string
+          location?: string | null
+          meeting_outcome?: string | null
+          meeting_type?: Database["public"]["Enums"]["meeting_type"]
+          next_follow_up?: string | null
+          order_status?: Database["public"]["Enums"]["order_status"]
+          product_discussed?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_reports_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          address: string | null
+          city: string | null
+          company_name: string | null
+          contact_person: string | null
+          created_at: string
+          created_by: string
+          customer_name: string
+          customer_type: string | null
+          email: string | null
+          id: string
+          industry_segment: string | null
+          mobile: string | null
+          notes: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["customer_status"]
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company_name?: string | null
+          contact_person?: string | null
+          created_at?: string
+          created_by: string
+          customer_name: string
+          customer_type?: string | null
+          email?: string | null
+          id?: string
+          industry_segment?: string | null
+          mobile?: string | null
+          notes?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["customer_status"]
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company_name?: string | null
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string
+          customer_name?: string
+          customer_type?: string | null
+          email?: string | null
+          id?: string
+          industry_segment?: string | null
+          mobile?: string | null
+          notes?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["customer_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "employee"
+      customer_status: "Active" | "Inactive"
+      meeting_type:
+        | "Physical Meeting"
+        | "Phone Call"
+        | "Video Call"
+        | "Follow-up"
+      order_status:
+        | "Interested"
+        | "Trial Required"
+        | "Follow-up Needed"
+        | "Order Confirmed"
+        | "No Response"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +331,22 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "employee"],
+      customer_status: ["Active", "Inactive"],
+      meeting_type: [
+        "Physical Meeting",
+        "Phone Call",
+        "Video Call",
+        "Follow-up",
+      ],
+      order_status: [
+        "Interested",
+        "Trial Required",
+        "Follow-up Needed",
+        "Order Confirmed",
+        "No Response",
+      ],
+    },
   },
 } as const
