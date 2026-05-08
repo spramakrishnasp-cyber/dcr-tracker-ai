@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppReportsRouteImport } from './routes/_app.reports'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCustomersRouteImport } from './routes/_app.customers'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
@@ -32,6 +33,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -48,14 +54,14 @@ const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppReportsIndexRoute = AppReportsIndexRouteImport.update({
-  id: '/reports/',
-  path: '/reports/',
-  getParentRoute: () => AppRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppReportsRoute,
 } as any)
 const AppReportsNewRoute = AppReportsNewRouteImport.update({
-  id: '/reports/new',
-  path: '/reports/new',
-  getParentRoute: () => AppRoute,
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppReportsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AppAnalyticsRoute
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
+  '/reports': typeof AppReportsRouteWithChildren
   '/reports/new': typeof AppReportsNewRoute
   '/reports/': typeof AppReportsIndexRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesById {
   '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/customers': typeof AppCustomersRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/reports': typeof AppReportsRouteWithChildren
   '/_app/reports/new': typeof AppReportsNewRoute
   '/_app/reports/': typeof AppReportsIndexRoute
 }
@@ -95,6 +103,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/customers'
     | '/dashboard'
+    | '/reports'
     | '/reports/new'
     | '/reports/'
   fileRoutesByTo: FileRoutesByTo
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/_app/analytics'
     | '/_app/customers'
     | '/_app/dashboard'
+    | '/_app/reports'
     | '/_app/reports/new'
     | '/_app/reports/'
   fileRoutesById: FileRoutesById
@@ -147,6 +157,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/reports': {
+      id: '/_app/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -170,35 +187,47 @@ declare module '@tanstack/react-router' {
     }
     '/_app/reports/': {
       id: '/_app/reports/'
-      path: '/reports'
+      path: '/'
       fullPath: '/reports/'
       preLoaderRoute: typeof AppReportsIndexRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppReportsRoute
     }
     '/_app/reports/new': {
       id: '/_app/reports/new'
-      path: '/reports/new'
+      path: '/new'
       fullPath: '/reports/new'
       preLoaderRoute: typeof AppReportsNewRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppReportsRoute
     }
   }
 }
+
+interface AppReportsRouteChildren {
+  AppReportsNewRoute: typeof AppReportsNewRoute
+  AppReportsIndexRoute: typeof AppReportsIndexRoute
+}
+
+const AppReportsRouteChildren: AppReportsRouteChildren = {
+  AppReportsNewRoute: AppReportsNewRoute,
+  AppReportsIndexRoute: AppReportsIndexRoute,
+}
+
+const AppReportsRouteWithChildren = AppReportsRoute._addFileChildren(
+  AppReportsRouteChildren,
+)
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCustomersRoute: typeof AppCustomersRoute
   AppDashboardRoute: typeof AppDashboardRoute
-  AppReportsNewRoute: typeof AppReportsNewRoute
-  AppReportsIndexRoute: typeof AppReportsIndexRoute
+  AppReportsRoute: typeof AppReportsRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppCustomersRoute: AppCustomersRoute,
   AppDashboardRoute: AppDashboardRoute,
-  AppReportsNewRoute: AppReportsNewRoute,
-  AppReportsIndexRoute: AppReportsIndexRoute,
+  AppReportsRoute: AppReportsRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
