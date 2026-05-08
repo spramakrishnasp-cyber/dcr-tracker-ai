@@ -1,0 +1,156 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { fetchReports, fetchCustomers, fetchProfiles } from "@/lib/queries";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { PhoneCall, Users, Calendar, Bell, TrendingUp } from "lucide-react";
+import { format, isToday, startOfWeek, startOfMonth, parseISO, isAfter } from "date-fns";
+
+export const Route = createFileRoute("/_app/dashboard")({
+  component: Dashboard,
+});
+
+function Dashboard() {
+  const { data: reports = [] } = useQuery({ queryKey: ["reports"], queryFn: fetchReports });
+  const { data: customers = [] } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
+  const { data: profiles = [] } = useQuery({ queryKey: ["profiles"], queryFn: fetchProfiles });
+
+  const today = new Date();
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+  const monthStart = startOfMonth(today);
+
+  const todayCount = reports.filter((r) => isToday(parseISO(r.call_date))).length;
+  const weekCount = reports.filter((r) => isAfter(parseISO(r.call_date), weekStart) || parseISO(r.call_date).toDateString() === weekStart.toDateString()).length;
+  const monthCount = reports.filter((r) => isAfter(parseISO(r.call_date), monthStart) || parseISO(r.call_date).toDateString() === monthStart.toDateString()).length;
+  const activeCustomers = customers.filter((c) => c.status === "Active").length;
+  const followUps = reports.filter(
+    (r) => r.next_follow_up && isAfter(parseISO(r.next_follow_up), today) && r.order_status === "Follow-up Needed",
+  ).length;
+
+  const statusColor: Record<string, string> = {
+    "Order Confirmed": "bg-success/15 text-success",
+    "Interested": "bg-primary/10 text-primary",
+    "Trial Required": "bg-warning/15 text-warning-foreground",
+    "Follow-up Needed": "bg-accent text-accent-foreground",
+    "No Response": "bg-muted text-muted-foreground",
+  };
+
+  // Team perf
+  const perEmp = new Map<string, number>();
+  reports.forEach((r) => perEmp.set(r.user_id, (perEmp.get(r.user_id) ?? 0) + 1));
+  const team = profiles
+    .map((p) => ({ name: p.full_name || p.email, calls: perEmp.get(p.id) ?? 0 }))
+    .sort((a, b) => b.calls - a.calls)
+    .slice(0, 5);
+
+  const recent = reports.slice(0, 6);
+  const customerById = new Map(customers.map((c) => [c.id, c]));
+  const profileById = new Map(profiles.map((p) => [p.id, p]));
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">Overview of your sales activity</p>
+      </div>
+
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+        <Stat label="Calls Today" value={todayCount} icon={PhoneCall} accent />
+        <Stat label="This Week" value={weekCount} icon={Calendar} />
+        <Stat label="This Month" value={monthCount} icon={TrendingUp} />
+        <Stat label="Active Customers" value={activeCustomers} icon={Users} />
+        <Stat label="Pending Follow-ups" value={followUps} icon={Bell} />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="p-5 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold">Recent Activity</h2>
+            <span className="text-xs text-muted-foreground">Latest {recent.length} reports</span>
+          </div>
+          <div className="divide-y divide-border">
+            {recent.length === 0 && (
+              <p className="text-sm text-muted-foreground py-6 text-center">
+                No reports yet — log your first call to get started.
+              </p>
+            )}
+            {recent.map((r) => {
+              const c = r.customer_id ? customerById.get(r.customer_id) : null;
+              const p = profileById.get(r.user_id);
+              return (
+                <div key={r.id} className="py-3 flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm truncate">
+                      {c?.customer_name || "Unknown customer"}
+                      {c?.company_name && <span className="text-muted-foreground"> · {c.company_name}</span>}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                      {p?.full_name || "—"} · {r.meeting_type} · {format(parseISO(r.call_date), "MMM d")}
+                    </div>
+                    {r.discussion && (
+                      <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{r.discussion}</div>
+                    )}
+                  </div>
+                  <Badge className={statusColor[r.order_status] ?? ""} variant="secondary">
+                    {r.order_status}
+                  </Badge>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <h2 className="font-semibold mb-4">Team Performance</h2>
+          <div className="space-y-3">
+            {team.length === 0 && (
+              <p className="text-sm text-muted-foreground">No data yet.</p>
+            )}
+            {team.map((t) => {
+              const max = Math.max(...team.map((x) => x.calls), 1);
+              return (
+                <div key={t.name}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="truncate">{t.name}</span>
+                    <span className="text-muted-foreground">{t.calls}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${(t.calls / max) * 100}%`,
+                        background: "var(--gradient-primary)",
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  icon: Icon,
+  accent,
+}: {
+  label: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  accent?: boolean;
+}) {
+  return (
+    <Card className="p-4 relative overflow-hidden" style={accent ? { background: "var(--gradient-primary)", color: "var(--primary-foreground)" } : undefined}>
+      <div className="flex items-center justify-between">
+        <span className={accent ? "text-xs uppercase tracking-wide opacity-80" : "text-xs uppercase tracking-wide text-muted-foreground"}>{label}</span>
+        <Icon className="h-4 w-4 opacity-70" />
+      </div>
+      <div className="text-3xl font-semibold mt-2">{value}</div>
+    </Card>
+  );
+}
