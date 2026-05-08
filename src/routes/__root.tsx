@@ -77,10 +77,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Sales DCR — Daily Call Reports" },
       { name: "description", content: "Daily Call Report management for sales teams: log visits, track customers, generate PDF reports." },
       { property: "og:title", content: "Sales DCR — Daily Call Reports" },
-      { property: "og:description", content: "Daily Call Report management for sales teams." },
+      { property: "og:description", content: "Daily Call Report management for sales teams: log visits, track customers, generate PDF reports." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Sales DCR — Daily Call Reports" },
+      { name: "twitter:description", content: "Daily Call Report management for sales teams: log visits, track customers, generate PDF reports." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/accd6548-c8de-46ed-bf57-de4b10608b6a/id-preview-e374c43b--ba3a12b5-dfdb-430e-a895-1d6a168fbf24.lovable.app-1778254647046.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/accd6548-c8de-46ed-bf57-de4b10608b6a/id-preview-e374c43b--ba3a12b5-dfdb-430e-a895-1d6a168fbf24.lovable.app-1778254647046.png" },
     ],
     links: [
       {
