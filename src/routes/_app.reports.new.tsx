@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { CalendarClock, User, ClipboardList, Wallet, MapPin, Save, X } from "lucide-react";
 
 export const Route = createFileRoute("/_app/reports/new")({
   component: NewReport,
@@ -39,7 +40,23 @@ function NewReport() {
     meeting_outcome: "",
     next_follow_up: "",
     location: "",
+    daily_allowance: "",
+    kilometers_travelled: "",
+    ta_per_km: "",
+    lodging_expense: "",
+    travel_fare: "",
+    other_expense: "",
+    other_expense_note: "",
   });
+
+  const num = (v: string) => (v === "" ? 0 : Number(v) || 0);
+  const kmAmount = num(form.kilometers_travelled) * num(form.ta_per_km);
+  const totalExpense =
+    num(form.daily_allowance) +
+    kmAmount +
+    num(form.lodging_expense) +
+    num(form.travel_fare) +
+    num(form.other_expense);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -55,6 +72,13 @@ function NewReport() {
         meeting_outcome: form.meeting_outcome || null,
         next_follow_up: form.next_follow_up || null,
         location: form.location || null,
+        daily_allowance: num(form.daily_allowance),
+        kilometers_travelled: num(form.kilometers_travelled),
+        ta_per_km: num(form.ta_per_km),
+        lodging_expense: num(form.lodging_expense),
+        travel_fare: num(form.travel_fare),
+        other_expense: num(form.other_expense),
+        other_expense_note: form.other_expense_note || null,
       });
       if (error) throw error;
     },
@@ -74,27 +98,64 @@ function NewReport() {
     );
   }
 
-  return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">New Call Report</h1>
-        <p className="text-sm text-muted-foreground">Log details of your customer interaction</p>
-      </div>
-      <Card className="p-6">
-        <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Date *</Label>
-              <Input type="date" required value={form.call_date} onChange={(e) => setForm({ ...form, call_date: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Time *</Label>
-              <Input type="time" required value={form.call_time} onChange={(e) => setForm({ ...form, call_time: e.target.value })} />
-            </div>
-          </div>
+  const selectedCustomer = customers.find((c) => c.id === form.customer_id);
 
-          <div className="space-y-1.5">
-            <Label className="text-xs">Customer *</Label>
+  return (
+    <form
+      onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
+      className="max-w-5xl mx-auto pb-24"
+    >
+      {/* Salesforce-style sticky header */}
+      <div className="sticky top-0 z-10 -mx-4 md:-mx-6 px-4 md:px-6 py-3 mb-5 bg-card border-b border-border flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <ClipboardList className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Call Report</div>
+            <h1 className="text-base md:text-lg font-semibold truncate">
+              {selectedCustomer ? selectedCustomer.customer_name : "New Call Report"}
+            </h1>
+          </div>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <Button type="button" variant="outline" size="sm" onClick={() => navigate({ to: "/reports" })}>
+            <X className="h-4 w-4 mr-1" /> Cancel
+          </Button>
+          <Button type="submit" size="sm" disabled={save.isPending || !form.customer_id}>
+            <Save className="h-4 w-4 mr-1" /> {save.isPending ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-5 px-1">
+        <Section icon={<CalendarClock className="h-4 w-4" />} title="Call Information">
+          <Field label="Date *">
+            <Input type="date" required value={form.call_date} onChange={(e) => setForm({ ...form, call_date: e.target.value })} />
+          </Field>
+          <Field label="Time *">
+            <Input type="time" required value={form.call_time} onChange={(e) => setForm({ ...form, call_time: e.target.value })} />
+          </Field>
+          <Field label="Meeting Type *">
+            <Select value={form.meeting_type} onValueChange={(v) => setForm({ ...form, meeting_type: v as typeof form.meeting_type })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {meetingTypes.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Order Status *">
+            <Select value={form.order_status} onValueChange={(v) => setForm({ ...form, order_status: v as typeof form.order_status })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {orderStatuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+        </Section>
+
+        <Section icon={<User className="h-4 w-4" />} title="Customer & Discussion">
+          <Field label="Customer *" full>
             <Select value={form.customer_id} onValueChange={(v) => setForm({ ...form, customer_id: v })}>
               <SelectTrigger><SelectValue placeholder="Select a customer" /></SelectTrigger>
               <SelectContent>
@@ -104,66 +165,83 @@ function NewReport() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Meeting Type *</Label>
-              <Select value={form.meeting_type} onValueChange={(v) => setForm({ ...form, meeting_type: v as typeof form.meeting_type })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {meetingTypes.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Order Status *</Label>
-              <Select value={form.order_status} onValueChange={(v) => setForm({ ...form, order_status: v as typeof form.order_status })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {orderStatuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs">Product Discussed</Label>
+          </Field>
+          <Field label="Product Discussed">
             <Input value={form.product_discussed} onChange={(e) => setForm({ ...form, product_discussed: e.target.value })} />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs">Discussion / Remarks</Label>
-            <Textarea rows={4} value={form.discussion} onChange={(e) => setForm({ ...form, discussion: e.target.value })} />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs">Meeting Outcome</Label>
+          </Field>
+          <Field label="Meeting Outcome">
             <Input value={form.meeting_outcome} onChange={(e) => setForm({ ...form, meeting_outcome: e.target.value })} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Next Follow-up</Label>
-              <Input type="date" value={form.next_follow_up} onChange={(e) => setForm({ ...form, next_follow_up: e.target.value })} />
+          </Field>
+          <Field label="Discussion / Remarks" full>
+            <Textarea rows={4} value={form.discussion} onChange={(e) => setForm({ ...form, discussion: e.target.value })} />
+          </Field>
+          <Field label="Next Follow-up">
+            <Input type="date" value={form.next_follow_up} onChange={(e) => setForm({ ...form, next_follow_up: e.target.value })} />
+          </Field>
+          <Field label="Location (GPS / address)">
+            <div className="flex gap-2">
+              <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="lat, lng or address" />
+              <Button type="button" variant="outline" size="icon" onClick={captureLocation}><MapPin className="h-4 w-4" /></Button>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Location (GPS / address)</Label>
-              <div className="flex gap-2">
-                <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="lat, lng or address" />
-                <Button type="button" variant="outline" onClick={captureLocation}>📍</Button>
-              </div>
+          </Field>
+        </Section>
+
+        <Section icon={<Wallet className="h-4 w-4" />} title="Travelling Expenses">
+          <Field label="Daily Allowance">
+            <Input type="number" min="0" step="0.01" value={form.daily_allowance} onChange={(e) => setForm({ ...form, daily_allowance: e.target.value })} placeholder="0.00" />
+          </Field>
+          <Field label="Kilometers Travelled">
+            <Input type="number" min="0" step="0.01" value={form.kilometers_travelled} onChange={(e) => setForm({ ...form, kilometers_travelled: e.target.value })} placeholder="0" />
+          </Field>
+          <Field label="TA per Kilometer">
+            <Input type="number" min="0" step="0.01" value={form.ta_per_km} onChange={(e) => setForm({ ...form, ta_per_km: e.target.value })} placeholder="0.00" />
+          </Field>
+          <Field label="Travel Allowance (auto)">
+            <Input value={kmAmount.toFixed(2)} readOnly className="bg-muted/50" />
+          </Field>
+          <Field label="Lodging">
+            <Input type="number" min="0" step="0.01" value={form.lodging_expense} onChange={(e) => setForm({ ...form, lodging_expense: e.target.value })} placeholder="0.00" />
+          </Field>
+          <Field label="Train / Air Fare">
+            <Input type="number" min="0" step="0.01" value={form.travel_fare} onChange={(e) => setForm({ ...form, travel_fare: e.target.value })} placeholder="0.00" />
+          </Field>
+          <Field label="Other Expenses">
+            <Input type="number" min="0" step="0.01" value={form.other_expense} onChange={(e) => setForm({ ...form, other_expense: e.target.value })} placeholder="0.00" />
+          </Field>
+          <Field label="Other Expenses Note">
+            <Input value={form.other_expense_note} onChange={(e) => setForm({ ...form, other_expense_note: e.target.value })} placeholder="Description" />
+          </Field>
+          <div className="md:col-span-2 flex justify-end mt-2">
+            <div className="rounded-md border border-border bg-muted/40 px-4 py-2 text-sm">
+              <span className="text-muted-foreground mr-2">Total Expense:</span>
+              <span className="font-semibold tabular-nums">{totalExpense.toFixed(2)}</span>
             </div>
           </div>
+        </Section>
+      </div>
+    </form>
+  );
+}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => navigate({ to: "/reports" })}>Cancel</Button>
-            <Button type="submit" disabled={save.isPending || !form.customer_id}>
-              {save.isPending ? "Saving…" : "Save Report"}
-            </Button>
-          </div>
-        </form>
-      </Card>
+function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+  return (
+    <Card className="overflow-hidden border-border shadow-sm">
+      <div className="flex items-center gap-2 px-4 md:px-5 py-2.5 bg-muted/40 border-b border-border">
+        <span className="text-primary">{icon}</span>
+        <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+      </div>
+      <div className="p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+        {children}
+      </div>
+    </Card>
+  );
+}
+
+function Field({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
+  return (
+    <div className={`space-y-1.5 ${full ? "md:col-span-2" : ""}`}>
+      <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+      {children}
     </div>
   );
 }
