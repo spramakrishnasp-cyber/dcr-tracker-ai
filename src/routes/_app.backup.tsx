@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Download, Upload, ShieldAlert } from "lucide-react";
 import { format } from "date-fns";
 
-export const Route = createFileRoute("/_app/settings")({
+export const Route = createFileRoute("/_app/backup")({
   component: SettingsPage,
 });
 
