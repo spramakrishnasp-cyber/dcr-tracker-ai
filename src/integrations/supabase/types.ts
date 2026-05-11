@@ -21,14 +21,21 @@ export type Database = {
           call_time: string
           created_at: string
           customer_id: string | null
+          daily_allowance: number | null
           discussion: string | null
           id: string
+          kilometers_travelled: number | null
           location: string | null
+          lodging_expense: number | null
           meeting_outcome: string | null
           meeting_type: Database["public"]["Enums"]["meeting_type"]
           next_follow_up: string | null
           order_status: Database["public"]["Enums"]["order_status"]
+          other_expense: number | null
+          other_expense_note: string | null
           product_discussed: string | null
+          ta_per_km: number | null
+          travel_fare: number | null
           updated_at: string
           user_id: string
         }
@@ -38,14 +45,21 @@ export type Database = {
           call_time?: string
           created_at?: string
           customer_id?: string | null
+          daily_allowance?: number | null
           discussion?: string | null
           id?: string
+          kilometers_travelled?: number | null
           location?: string | null
+          lodging_expense?: number | null
           meeting_outcome?: string | null
           meeting_type: Database["public"]["Enums"]["meeting_type"]
           next_follow_up?: string | null
           order_status?: Database["public"]["Enums"]["order_status"]
+          other_expense?: number | null
+          other_expense_note?: string | null
           product_discussed?: string | null
+          ta_per_km?: number | null
+          travel_fare?: number | null
           updated_at?: string
           user_id: string
         }
@@ -55,14 +69,21 @@ export type Database = {
           call_time?: string
           created_at?: string
           customer_id?: string | null
+          daily_allowance?: number | null
           discussion?: string | null
           id?: string
+          kilometers_travelled?: number | null
           location?: string | null
+          lodging_expense?: number | null
           meeting_outcome?: string | null
           meeting_type?: Database["public"]["Enums"]["meeting_type"]
           next_follow_up?: string | null
           order_status?: Database["public"]["Enums"]["order_status"]
+          other_expense?: number | null
+          other_expense_note?: string | null
           product_discussed?: string | null
+          ta_per_km?: number | null
+          travel_fare?: number | null
           updated_at?: string
           user_id?: string
         }
