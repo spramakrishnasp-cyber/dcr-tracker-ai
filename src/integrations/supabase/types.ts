@@ -178,6 +178,54 @@ export type Database = {
         }
         Relationships: []
       }
+      travelling_expenses: {
+        Row: {
+          created_at: string
+          daily_allowance: number
+          expense_date: string
+          id: string
+          kilometers_travelled: number
+          lodging_expense: number
+          notes: string | null
+          other_expense: number
+          other_expense_note: string | null
+          ta_per_km: number
+          travel_fare: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_allowance?: number
+          expense_date?: string
+          id?: string
+          kilometers_travelled?: number
+          lodging_expense?: number
+          notes?: string | null
+          other_expense?: number
+          other_expense_note?: string | null
+          ta_per_km?: number
+          travel_fare?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_allowance?: number
+          expense_date?: string
+          id?: string
+          kilometers_travelled?: number
+          lodging_expense?: number
+          notes?: string | null
+          other_expense?: number
+          other_expense_note?: string | null
+          ta_per_km?: number
+          travel_fare?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
