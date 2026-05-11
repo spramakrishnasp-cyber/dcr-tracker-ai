@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format, parseISO } from "date-fns";
-import type { CallReport, Customer } from "./queries";
+import type { CallReport, Customer, TravelExpense } from "./queries";
 
 const BRAND = { r: 28, g: 45, b: 92 };       // deep navy
 const ACCENT = { r: 234, g: 88, b: 12 };     // warm orange
