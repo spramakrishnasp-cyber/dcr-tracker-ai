@@ -48,6 +48,8 @@ export type TravelExpense = {
   travel_fare: number;
   other_expense: number;
   other_expense_note: string | null;
+  details: string | null;
+  other_expenses_items: { category: string; amount: number; note?: string | null }[];
   notes: string | null;
   created_at: string;
   updated_at: string;
