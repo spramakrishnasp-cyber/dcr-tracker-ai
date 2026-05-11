@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { Plus, FileDown, Download, Trash2 } from "lucide-react";
+import { Plus, FileDown, Download, Trash2, Pencil } from "lucide-react";
 import { exportReportsPdf, exportReportsCsv } from "@/lib/pdf";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -166,6 +166,11 @@ function Reports() {
                       {r.next_follow_up ? format(parseISO(r.next_follow_up), "MMM d") : "—"}
                     </td>
                     <td className="py-2 pr-3">
+                      <Button asChild size="icon" variant="ghost" title="Edit">
+                        <Link to="/reports/$reportId/edit" params={{ reportId: r.id }}>
+                          <Pencil className="h-4 w-4 text-primary" />
+                        </Link>
+                      </Button>
                       <Button size="icon" variant="ghost" onClick={() => { if (confirm("Delete report?")) del.mutate(r.id); }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
