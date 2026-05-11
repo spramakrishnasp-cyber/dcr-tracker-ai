@@ -56,7 +56,7 @@ const rowTotal = (e: TravelExpense) =>
   num(e.lodging_expense) + num(e.travel_fare) + num(e.other_expense);
 
 function Expenses() {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const qc = useQueryClient();
   const { data: expenses = [] } = useQuery({ queryKey: ["expenses"], queryFn: fetchExpenses });
   const { data: profiles = [] } = useQuery({ queryKey: ["profiles"], queryFn: fetchProfiles });
@@ -123,6 +123,18 @@ function Expenses() {
 
   const save = useMutation({
     mutationFn: async () => {
+      // Duplicate detection — same user + same date
+      const dup = expenses.find(
+        (e) =>
+          e.expense_date === form.expense_date &&
+          e.user_id === (editing ? editing.user_id : user!.id) &&
+          (!editing || e.id !== editing.id),
+      );
+      if (dup) {
+        throw new Error(
+          `Duplicate entry: an expense for ${format(parseISO(form.expense_date), "MMM d, yyyy")} already exists. Please edit the existing entry instead.`,
+        );
+      }
       const items = form.other_items
         .filter((i) => num(i.amount) > 0)
         .map((i) => ({ category: i.category, amount: num(i.amount), note: i.note || null }));
@@ -231,7 +243,6 @@ function Expenses() {
             <tbody>
               {filtered.map((e) => {
                 const ta = num(e.kilometers_travelled) * num(e.ta_per_km);
-                const canEdit = isAdmin || e.user_id === user?.id;
                 return (
                   <tr key={e.id} className="border-b border-border/60 hover:bg-secondary/40">
                     <td className="py-2 pr-3 whitespace-nowrap font-medium">{format(parseISO(e.expense_date), "MMM d, yyyy")}</td>
@@ -247,10 +258,10 @@ function Expenses() {
                     <td className="py-2 pr-3 text-right tabular-nums">{num(e.other_expense).toFixed(2)}</td>
                     <td className="py-2 pr-3 text-right tabular-nums font-semibold">{rowTotal(e).toFixed(2)}</td>
                     <td className="py-2 pr-3 whitespace-nowrap">
-                      <Button size="icon" variant="ghost" disabled={!canEdit} onClick={() => openEdit(e)} title="Edit">
+                      <Button size="icon" variant="ghost" onClick={() => openEdit(e)} title="Edit">
                         <Pencil className="h-4 w-4 text-primary" />
                       </Button>
-                      <Button size="icon" variant="ghost" disabled={!canEdit} onClick={() => { if (confirm("Delete expense?")) del.mutate(e.id); }}>
+                      <Button size="icon" variant="ghost" onClick={() => { if (confirm("Delete expense?")) del.mutate(e.id); }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </td>
