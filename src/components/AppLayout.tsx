@@ -9,6 +9,7 @@ import {
   LogOut,
   Menu,
   DatabaseBackup,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -19,6 +20,7 @@ const nav = [
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/reports", label: "Call Reports", icon: PhoneCall },
   { to: "/reports/new", label: "New Report", icon: FileText },
+  { to: "/expenses", label: "Travelling Expenses", icon: Wallet },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/settings", label: "Backup & Restore", icon: DatabaseBackup },
 ] as const;

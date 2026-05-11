@@ -37,6 +37,22 @@ export type CallReport = {
   updated_at: string;
 };
 
+export type TravelExpense = {
+  id: string;
+  user_id: string;
+  expense_date: string;
+  daily_allowance: number;
+  kilometers_travelled: number;
+  ta_per_km: number;
+  lodging_expense: number;
+  travel_fare: number;
+  other_expense: number;
+  other_expense_note: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export async function fetchCustomers() {
   const { data, error } = await supabase
     .from("customers")
@@ -60,4 +76,13 @@ export async function fetchProfiles() {
   const { data, error } = await supabase.from("profiles").select("id, full_name, email");
   if (error) throw error;
   return data as { id: string; full_name: string; email: string }[];
+}
+
+export async function fetchExpenses() {
+  const { data, error } = await supabase
+    .from("travelling_expenses")
+    .select("*")
+    .order("expense_date", { ascending: false });
+  if (error) throw error;
+  return data as TravelExpense[];
 }
