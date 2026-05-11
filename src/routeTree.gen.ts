@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppReportsRouteImport } from './routes/_app.reports'
+import { Route as AppExpensesRouteImport } from './routes/_app.expenses'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCustomersRouteImport } from './routes/_app.customers'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
@@ -43,6 +44,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppReportsRoute = AppReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppExpensesRoute = AppExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AppAnalyticsRoute
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
+  '/expenses': typeof AppExpensesRoute
   '/reports': typeof AppReportsRouteWithChildren
   '/settings': typeof AppSettingsRoute
   '/reports/new': typeof AppReportsNewRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AppAnalyticsRoute
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
+  '/expenses': typeof AppExpensesRoute
   '/settings': typeof AppSettingsRoute
   '/reports/new': typeof AppReportsNewRoute
   '/reports': typeof AppReportsIndexRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/customers': typeof AppCustomersRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/expenses': typeof AppExpensesRoute
   '/_app/reports': typeof AppReportsRouteWithChildren
   '/_app/settings': typeof AppSettingsRoute
   '/_app/reports/new': typeof AppReportsNewRoute
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/customers'
     | '/dashboard'
+    | '/expenses'
     | '/reports'
     | '/settings'
     | '/reports/new'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/customers'
     | '/dashboard'
+    | '/expenses'
     | '/settings'
     | '/reports/new'
     | '/reports'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/_app/analytics'
     | '/_app/customers'
     | '/_app/dashboard'
+    | '/_app/expenses'
     | '/_app/reports'
     | '/_app/settings'
     | '/_app/reports/new'
@@ -193,6 +205,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/expenses': {
+      id: '/_app/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof AppExpensesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -260,6 +279,7 @@ interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCustomersRoute: typeof AppCustomersRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppExpensesRoute: typeof AppExpensesRoute
   AppReportsRoute: typeof AppReportsRouteWithChildren
   AppSettingsRoute: typeof AppSettingsRoute
 }
@@ -268,6 +288,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppCustomersRoute: AppCustomersRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppExpensesRoute: AppExpensesRoute,
   AppReportsRoute: AppReportsRouteWithChildren,
   AppSettingsRoute: AppSettingsRoute,
 }
@@ -282,3 +303,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
