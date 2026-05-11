@@ -12,11 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppReportsRouteImport } from './routes/_app.reports'
 import { Route as AppExpensesRouteImport } from './routes/_app.expenses'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCustomersRouteImport } from './routes/_app.customers'
+import { Route as AppBackupRouteImport } from './routes/_app.backup'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppReportsIndexRouteImport } from './routes/_app.reports.index'
 import { Route as AppReportsNewRouteImport } from './routes/_app.reports.new'
@@ -36,11 +36,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppReportsRoute = AppReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -59,6 +54,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
 const AppCustomersRoute = AppCustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBackupRoute = AppBackupRouteImport.update({
+  id: '/backup',
+  path: '/backup',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
@@ -86,11 +86,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/analytics': typeof AppAnalyticsRoute
+  '/backup': typeof AppBackupRoute
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
   '/expenses': typeof AppExpensesRoute
   '/reports': typeof AppReportsRouteWithChildren
-  '/settings': typeof AppSettingsRoute
   '/reports/new': typeof AppReportsNewRoute
   '/reports/': typeof AppReportsIndexRoute
   '/reports/$reportId/edit': typeof AppReportsReportIdEditRoute
@@ -99,10 +99,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/analytics': typeof AppAnalyticsRoute
+  '/backup': typeof AppBackupRoute
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
   '/expenses': typeof AppExpensesRoute
-  '/settings': typeof AppSettingsRoute
   '/reports/new': typeof AppReportsNewRoute
   '/reports': typeof AppReportsIndexRoute
   '/reports/$reportId/edit': typeof AppReportsReportIdEditRoute
@@ -113,11 +113,11 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/analytics': typeof AppAnalyticsRoute
+  '/_app/backup': typeof AppBackupRoute
   '/_app/customers': typeof AppCustomersRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/expenses': typeof AppExpensesRoute
   '/_app/reports': typeof AppReportsRouteWithChildren
-  '/_app/settings': typeof AppSettingsRoute
   '/_app/reports/new': typeof AppReportsNewRoute
   '/_app/reports/': typeof AppReportsIndexRoute
   '/_app/reports/$reportId/edit': typeof AppReportsReportIdEditRoute
@@ -128,11 +128,11 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/analytics'
+    | '/backup'
     | '/customers'
     | '/dashboard'
     | '/expenses'
     | '/reports'
-    | '/settings'
     | '/reports/new'
     | '/reports/'
     | '/reports/$reportId/edit'
@@ -141,10 +141,10 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/analytics'
+    | '/backup'
     | '/customers'
     | '/dashboard'
     | '/expenses'
-    | '/settings'
     | '/reports/new'
     | '/reports'
     | '/reports/$reportId/edit'
@@ -154,11 +154,11 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/_app/analytics'
+    | '/_app/backup'
     | '/_app/customers'
     | '/_app/dashboard'
     | '/_app/expenses'
     | '/_app/reports'
-    | '/_app/settings'
     | '/_app/reports/new'
     | '/_app/reports/'
     | '/_app/reports/$reportId/edit'
@@ -193,13 +193,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/reports': {
       id: '/_app/reports'
       path: '/reports'
@@ -226,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/customers'
       fullPath: '/customers'
       preLoaderRoute: typeof AppCustomersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/backup': {
+      id: '/_app/backup'
+      path: '/backup'
+      fullPath: '/backup'
+      preLoaderRoute: typeof AppBackupRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/analytics': {
@@ -277,20 +277,20 @@ const AppReportsRouteWithChildren = AppReportsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppBackupRoute: typeof AppBackupRoute
   AppCustomersRoute: typeof AppCustomersRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppExpensesRoute: typeof AppExpensesRoute
   AppReportsRoute: typeof AppReportsRouteWithChildren
-  AppSettingsRoute: typeof AppSettingsRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
+  AppBackupRoute: AppBackupRoute,
   AppCustomersRoute: AppCustomersRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppExpensesRoute: AppExpensesRoute,
   AppReportsRoute: AppReportsRouteWithChildren,
-  AppSettingsRoute: AppSettingsRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -303,3 +303,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
