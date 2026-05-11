@@ -17,9 +17,11 @@ import { Route as AppReportsRouteImport } from './routes/_app.reports'
 import { Route as AppExpensesRouteImport } from './routes/_app.expenses'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCustomersRouteImport } from './routes/_app.customers'
+import { Route as AppBackupRouteImport } from './routes/_app.backup'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppReportsIndexRouteImport } from './routes/_app.reports.index'
 import { Route as AppReportsNewRouteImport } from './routes/_app.reports.new'
+import { Route as ApiPublicHooksFollowUpRemindersRouteImport } from './routes/api/public/hooks/follow-up-reminders'
 import { Route as AppReportsReportIdEditRouteImport } from './routes/_app.reports.$reportId.edit'
 
 const LoginRoute = LoginRouteImport.update({
@@ -61,6 +63,11 @@ const AppCustomersRoute = AppCustomersRouteImport.update({
   path: '/customers',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBackupRoute = AppBackupRouteImport.update({
+  id: '/backup',
+  path: '/backup',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -76,6 +83,12 @@ const AppReportsNewRoute = AppReportsNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AppReportsRoute,
 } as any)
+const ApiPublicHooksFollowUpRemindersRoute =
+  ApiPublicHooksFollowUpRemindersRouteImport.update({
+    id: '/api/public/hooks/follow-up-reminders',
+    path: '/api/public/hooks/follow-up-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppReportsReportIdEditRoute = AppReportsReportIdEditRouteImport.update({
   id: '/$reportId/edit',
   path: '/$reportId/edit',
@@ -86,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/analytics': typeof AppAnalyticsRoute
+  '/backup': typeof AppBackupRoute
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
   '/expenses': typeof AppExpensesRoute
@@ -94,11 +108,13 @@ export interface FileRoutesByFullPath {
   '/reports/new': typeof AppReportsNewRoute
   '/reports/': typeof AppReportsIndexRoute
   '/reports/$reportId/edit': typeof AppReportsReportIdEditRoute
+  '/api/public/hooks/follow-up-reminders': typeof ApiPublicHooksFollowUpRemindersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/analytics': typeof AppAnalyticsRoute
+  '/backup': typeof AppBackupRoute
   '/customers': typeof AppCustomersRoute
   '/dashboard': typeof AppDashboardRoute
   '/expenses': typeof AppExpensesRoute
@@ -106,6 +122,7 @@ export interface FileRoutesByTo {
   '/reports/new': typeof AppReportsNewRoute
   '/reports': typeof AppReportsIndexRoute
   '/reports/$reportId/edit': typeof AppReportsReportIdEditRoute
+  '/api/public/hooks/follow-up-reminders': typeof ApiPublicHooksFollowUpRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,6 +130,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/analytics': typeof AppAnalyticsRoute
+  '/_app/backup': typeof AppBackupRoute
   '/_app/customers': typeof AppCustomersRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/expenses': typeof AppExpensesRoute
@@ -121,6 +139,7 @@ export interface FileRoutesById {
   '/_app/reports/new': typeof AppReportsNewRoute
   '/_app/reports/': typeof AppReportsIndexRoute
   '/_app/reports/$reportId/edit': typeof AppReportsReportIdEditRoute
+  '/api/public/hooks/follow-up-reminders': typeof ApiPublicHooksFollowUpRemindersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -128,6 +147,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/analytics'
+    | '/backup'
     | '/customers'
     | '/dashboard'
     | '/expenses'
@@ -136,11 +156,13 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/reports/'
     | '/reports/$reportId/edit'
+    | '/api/public/hooks/follow-up-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/analytics'
+    | '/backup'
     | '/customers'
     | '/dashboard'
     | '/expenses'
@@ -148,12 +170,14 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/reports'
     | '/reports/$reportId/edit'
+    | '/api/public/hooks/follow-up-reminders'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/login'
     | '/_app/analytics'
+    | '/_app/backup'
     | '/_app/customers'
     | '/_app/dashboard'
     | '/_app/expenses'
@@ -162,12 +186,14 @@ export interface FileRouteTypes {
     | '/_app/reports/new'
     | '/_app/reports/'
     | '/_app/reports/$reportId/edit'
+    | '/api/public/hooks/follow-up-reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicHooksFollowUpRemindersRoute: typeof ApiPublicHooksFollowUpRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -228,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCustomersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/backup': {
+      id: '/_app/backup'
+      path: '/backup'
+      fullPath: '/backup'
+      preLoaderRoute: typeof AppBackupRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/analytics': {
       id: '/_app/analytics'
       path: '/analytics'
@@ -248,6 +281,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reports/new'
       preLoaderRoute: typeof AppReportsNewRouteImport
       parentRoute: typeof AppReportsRoute
+    }
+    '/api/public/hooks/follow-up-reminders': {
+      id: '/api/public/hooks/follow-up-reminders'
+      path: '/api/public/hooks/follow-up-reminders'
+      fullPath: '/api/public/hooks/follow-up-reminders'
+      preLoaderRoute: typeof ApiPublicHooksFollowUpRemindersRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/reports/$reportId/edit': {
       id: '/_app/reports/$reportId/edit'
@@ -277,6 +317,7 @@ const AppReportsRouteWithChildren = AppReportsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppBackupRoute: typeof AppBackupRoute
   AppCustomersRoute: typeof AppCustomersRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppExpensesRoute: typeof AppExpensesRoute
@@ -286,6 +327,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
+  AppBackupRoute: AppBackupRoute,
   AppCustomersRoute: AppCustomersRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppExpensesRoute: AppExpensesRoute,
@@ -299,6 +341,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicHooksFollowUpRemindersRoute: ApiPublicHooksFollowUpRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

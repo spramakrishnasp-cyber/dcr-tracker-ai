@@ -10,6 +10,7 @@ import {
   Menu,
   DatabaseBackup,
   Wallet,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -22,7 +23,8 @@ const nav = [
   { to: "/reports/new", label: "New Report", icon: FileText },
   { to: "/expenses", label: "Travelling Expenses", icon: Wallet },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/settings", label: "Backup & Restore", icon: DatabaseBackup },
+  { to: "/settings", label: "Settings", icon: SettingsIcon },
+  { to: "/backup", label: "Backup & Restore", icon: DatabaseBackup },
 ] as const;
 
 export function AppLayout() {

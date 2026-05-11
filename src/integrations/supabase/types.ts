@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          created_at: string
+          id: string
+          reminder_evening_before_enabled: boolean
+          reminder_morning_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+          whatsapp_webhook_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reminder_evening_before_enabled?: boolean
+          reminder_morning_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          whatsapp_webhook_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reminder_evening_before_enabled?: boolean
+          reminder_morning_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          whatsapp_webhook_url?: string | null
+        }
+        Relationships: []
+      }
       call_reports: {
         Row: {
           attachment_url: string | null
@@ -161,6 +191,7 @@ export type Database = {
           full_name: string
           id: string
           updated_at: string
+          whatsapp_number: string | null
         }
         Insert: {
           created_at?: string
@@ -168,6 +199,7 @@ export type Database = {
           full_name?: string
           id: string
           updated_at?: string
+          whatsapp_number?: string | null
         }
         Update: {
           created_at?: string
@@ -175,6 +207,28 @@ export type Database = {
           full_name?: string
           id?: string
           updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
+      reminder_log: {
+        Row: {
+          id: string
+          kind: string
+          report_id: string
+          sent_at: string
+        }
+        Insert: {
+          id?: string
+          kind: string
+          report_id: string
+          sent_at?: string
+        }
+        Update: {
+          id?: string
+          kind?: string
+          report_id?: string
+          sent_at?: string
         }
         Relationships: []
       }
