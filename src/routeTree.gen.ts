@@ -19,6 +19,7 @@ import { Route as AppCustomersRouteImport } from './routes/_app.customers'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppReportsIndexRouteImport } from './routes/_app.reports.index'
 import { Route as AppReportsNewRouteImport } from './routes/_app.reports.new'
+import { Route as AppReportsReportIdEditRouteImport } from './routes/_app.reports.$reportId.edit'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -69,6 +70,11 @@ const AppReportsNewRoute = AppReportsNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AppReportsRoute,
 } as any)
+const AppReportsReportIdEditRoute = AppReportsReportIdEditRouteImport.update({
+  id: '/$reportId/edit',
+  path: '/$reportId/edit',
+  getParentRoute: () => AppReportsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/reports/new': typeof AppReportsNewRoute
   '/reports/': typeof AppReportsIndexRoute
+  '/reports/$reportId/edit': typeof AppReportsReportIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/reports/new': typeof AppReportsNewRoute
   '/reports': typeof AppReportsIndexRoute
+  '/reports/$reportId/edit': typeof AppReportsReportIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/reports/new': typeof AppReportsNewRoute
   '/_app/reports/': typeof AppReportsIndexRoute
+  '/_app/reports/$reportId/edit': typeof AppReportsReportIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/reports/new'
     | '/reports/'
+    | '/reports/$reportId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/reports/new'
     | '/reports'
+    | '/reports/$reportId/edit'
   id:
     | '__root__'
     | '/'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/reports/new'
     | '/_app/reports/'
+    | '/_app/reports/$reportId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -218,17 +230,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsNewRouteImport
       parentRoute: typeof AppReportsRoute
     }
+    '/_app/reports/$reportId/edit': {
+      id: '/_app/reports/$reportId/edit'
+      path: '/$reportId/edit'
+      fullPath: '/reports/$reportId/edit'
+      preLoaderRoute: typeof AppReportsReportIdEditRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
   }
 }
 
 interface AppReportsRouteChildren {
   AppReportsNewRoute: typeof AppReportsNewRoute
   AppReportsIndexRoute: typeof AppReportsIndexRoute
+  AppReportsReportIdEditRoute: typeof AppReportsReportIdEditRoute
 }
 
 const AppReportsRouteChildren: AppReportsRouteChildren = {
   AppReportsNewRoute: AppReportsNewRoute,
   AppReportsIndexRoute: AppReportsIndexRoute,
+  AppReportsReportIdEditRoute: AppReportsReportIdEditRoute,
 }
 
 const AppReportsRouteWithChildren = AppReportsRoute._addFileChildren(
@@ -261,3 +282,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
