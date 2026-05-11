@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { fetchReports, fetchCustomers, fetchProfiles } from "@/lib/queries";
+import { fetchReports, fetchCustomers, fetchProfiles, fetchExpenses } from "@/lib/queries";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PhoneCall, Users, Calendar, Bell, TrendingUp } from "lucide-react";
+import { PhoneCall, Users, Calendar, Bell, TrendingUp, Wallet } from "lucide-react";
 import { format, isToday, startOfWeek, startOfMonth, parseISO, isAfter } from "date-fns";
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -14,6 +14,7 @@ function Dashboard() {
   const { data: reports = [] } = useQuery({ queryKey: ["reports"], queryFn: fetchReports });
   const { data: customers = [] } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
   const { data: profiles = [] } = useQuery({ queryKey: ["profiles"], queryFn: fetchProfiles });
+  const { data: expenses = [] } = useQuery({ queryKey: ["expenses"], queryFn: fetchExpenses });
 
   const today = new Date();
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });
@@ -46,6 +47,29 @@ function Dashboard() {
   const recent = reports.slice(0, 6);
   const customerById = new Map(customers.map((c) => [c.id, c]));
   const profileById = new Map(profiles.map((p) => [p.id, p]));
+
+  // Expense totals (current month)
+  const n = (v: number | null | undefined) => Number(v ?? 0) || 0;
+  const monthExpenses = expenses.filter((e) => isAfter(parseISO(e.expense_date), monthStart) || parseISO(e.expense_date).toDateString() === monthStart.toDateString());
+  const expBreakdown = monthExpenses.reduce(
+    (acc, e) => {
+      acc.daily += n(e.daily_allowance);
+      acc.travel += n(e.kilometers_travelled) * n(e.ta_per_km);
+      acc.lodging += n(e.lodging_expense);
+      acc.fare += n(e.travel_fare);
+      acc.other += n(e.other_expense);
+      return acc;
+    },
+    { daily: 0, travel: 0, lodging: 0, fare: 0, other: 0 },
+  );
+  const expGrand = expBreakdown.daily + expBreakdown.travel + expBreakdown.lodging + expBreakdown.fare + expBreakdown.other;
+  const expRows: { label: string; value: number }[] = [
+    { label: "Daily Allowance", value: expBreakdown.daily },
+    { label: "Travel Allowance (KM × Rate)", value: expBreakdown.travel },
+    { label: "Lodging", value: expBreakdown.lodging },
+    { label: "Train / Air Fare", value: expBreakdown.fare },
+    { label: "Other Expenses", value: expBreakdown.other },
+  ];
 
   return (
     <div className="space-y-6">
@@ -129,6 +153,29 @@ function Dashboard() {
           </div>
         </Card>
       </div>
+
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-primary" /> Total Expenses Details
+          </h2>
+          <span className="text-xs text-muted-foreground">
+            {format(monthStart, "MMMM yyyy")} · {monthExpenses.length} entries
+          </span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 mb-4">
+          {expRows.map((r) => (
+            <div key={r.label} className="rounded-md border border-border bg-secondary/40 p-3">
+              <div className="text-xs text-muted-foreground">{r.label}</div>
+              <div className="text-lg font-semibold tabular-nums mt-1">{r.value.toFixed(2)}</div>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-between rounded-md px-4 py-3" style={{ background: "var(--gradient-primary)", color: "var(--primary-foreground)" }}>
+          <span className="text-sm uppercase tracking-wide opacity-90">Grand Total</span>
+          <span className="text-2xl font-semibold tabular-nums">{expGrand.toFixed(2)}</span>
+        </div>
+      </Card>
     </div>
   );
 }
