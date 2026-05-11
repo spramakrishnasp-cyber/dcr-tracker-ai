@@ -274,6 +274,9 @@ function Expenses() {
             <Field label="Date *">
               <Input type="date" required value={form.expense_date} onChange={(e) => setForm({ ...form, expense_date: e.target.value })} />
             </Field>
+            <Field label="Details" full>
+              <Input value={form.details} onChange={(e) => setForm({ ...form, details: e.target.value })} placeholder="Tour / purpose / location" />
+            </Field>
             <Field label="Daily Allowance">
               <Input type="number" min="0" step="0.01" value={form.daily_allowance} onChange={(e) => setForm({ ...form, daily_allowance: e.target.value })} placeholder="0.00" />
             </Field>
@@ -292,12 +295,40 @@ function Expenses() {
             <Field label="Train / Air Fare">
               <Input type="number" min="0" step="0.01" value={form.travel_fare} onChange={(e) => setForm({ ...form, travel_fare: e.target.value })} placeholder="0.00" />
             </Field>
-            <Field label="Other Expenses">
-              <Input type="number" min="0" step="0.01" value={form.other_expense} onChange={(e) => setForm({ ...form, other_expense: e.target.value })} placeholder="0.00" />
-            </Field>
-            <Field label="Other Expenses Note" full>
-              <Input value={form.other_expense_note} onChange={(e) => setForm({ ...form, other_expense_note: e.target.value })} placeholder="Description" />
-            </Field>
+            <div className="md:col-span-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-medium text-muted-foreground">Other Expenses</Label>
+                <Button type="button" size="sm" variant="outline" onClick={addOtherItem}>
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add
+                </Button>
+              </div>
+              {form.other_items.length === 0 && (
+                <p className="text-xs text-muted-foreground italic">No other expenses added</p>
+              )}
+              {form.other_items.map((item, idx) => (
+                <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                  <div className="col-span-4">
+                    <Select value={item.category} onValueChange={(v) => updateOtherItem(idx, { category: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {OTHER_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-3">
+                    <Input type="number" min="0" step="0.01" placeholder="0.00" value={item.amount}
+                      onChange={(e) => updateOtherItem(idx, { amount: e.target.value })} />
+                  </div>
+                  <div className="col-span-4">
+                    <Input placeholder="Note (optional)" value={item.note}
+                      onChange={(e) => updateOtherItem(idx, { note: e.target.value })} />
+                  </div>
+                  <Button type="button" size="icon" variant="ghost" className="col-span-1" onClick={() => removeOtherItem(idx)}>
+                    <X className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
             <Field label="Notes" full>
               <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Optional notes" />
             </Field>
