@@ -182,6 +182,7 @@ export type Database = {
         Row: {
           created_at: string
           daily_allowance: number
+          details: string | null
           expense_date: string
           id: string
           kilometers_travelled: number
@@ -189,6 +190,7 @@ export type Database = {
           notes: string | null
           other_expense: number
           other_expense_note: string | null
+          other_expenses_items: Json
           ta_per_km: number
           travel_fare: number
           updated_at: string
@@ -197,6 +199,7 @@ export type Database = {
         Insert: {
           created_at?: string
           daily_allowance?: number
+          details?: string | null
           expense_date?: string
           id?: string
           kilometers_travelled?: number
@@ -204,6 +207,7 @@ export type Database = {
           notes?: string | null
           other_expense?: number
           other_expense_note?: string | null
+          other_expenses_items?: Json
           ta_per_km?: number
           travel_fare?: number
           updated_at?: string
@@ -212,6 +216,7 @@ export type Database = {
         Update: {
           created_at?: string
           daily_allowance?: number
+          details?: string | null
           expense_date?: string
           id?: string
           kilometers_travelled?: number
@@ -219,6 +224,7 @@ export type Database = {
           notes?: string | null
           other_expense?: number
           other_expense_note?: string | null
+          other_expenses_items?: Json
           ta_per_km?: number
           travel_fare?: number
           updated_at?: string
