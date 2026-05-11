@@ -221,11 +221,10 @@ export function exportExpensesPdf(opts: {
   title: string;
   subtitle?: string;
 }) {
-  const { expenses, profiles, title, subtitle } = opts;
+  const { expenses, title, subtitle } = opts;
   const doc = new jsPDF({ orientation: "landscape" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
-  const pMap = new Map(profiles.map((p) => [p.id, p]));
 
   // Header
   doc.setFillColor(BRAND.r, BRAND.g, BRAND.b);
@@ -282,14 +281,17 @@ export function exportExpensesPdf(opts: {
     { da: 0, km: 0, ta: 0, lodge: 0, fare: 0, other: 0, total: 0 },
   );
 
-  const kpis = [
-    { label: "Entries", value: String(expenses.length) },
-    { label: "Total KM", value: totals.km.toFixed(0) },
-    { label: "Travel Allow.", value: totals.ta.toFixed(2) },
-    { label: "Lodging", value: totals.lodge.toFixed(2) },
-    { label: "Fare", value: totals.fare.toFixed(2) },
-    { label: "Grand Total", value: totals.total.toFixed(2) },
+  const kpiCandidates = [
+    { label: "Entries", value: String(expenses.length), show: expenses.length > 0 },
+    { label: "Total KM", value: totals.km.toFixed(0), show: totals.km > 0 },
+    { label: "Daily Allow.", value: totals.da.toFixed(2), show: totals.da > 0 },
+    { label: "Travel Allow.", value: totals.ta.toFixed(2), show: totals.ta > 0 },
+    { label: "Lodging", value: totals.lodge.toFixed(2), show: totals.lodge > 0 },
+    { label: "Fare", value: totals.fare.toFixed(2), show: totals.fare > 0 },
+    { label: "Other", value: totals.other.toFixed(2), show: totals.other > 0 },
+    { label: "Grand Total", value: totals.total.toFixed(2), show: true },
   ];
+  const kpis = kpiCandidates.filter((k) => k.show);
 
   const kpiTop = 54;
   const kpiH = 18;
@@ -311,55 +313,44 @@ export function exportExpensesPdf(opts: {
     doc.text(k.value, x + 4, kpiTop + 14);
   });
 
+  // Build columns dynamically — only include columns that have data
+  type Col = { header: string; align?: "left" | "right"; width?: number | "auto"; bold?: boolean; get: (e: TravelExpense) => string; total?: string };
+  const allCols: (Col & { show: boolean })[] = [
+    { header: "Date", width: 26, bold: true, show: true, get: (e) => format(parseISO(e.expense_date), "MMM d, yyyy") },
+    { header: "Details", width: "auto", show: expenses.some((e) => e.details), get: (e) => e.details ?? "" },
+    { header: "Daily Allow.", align: "right", show: totals.da > 0, get: (e) => Number(e.daily_allowance).toFixed(2), total: totals.da.toFixed(2) },
+    { header: "KM", align: "right", show: totals.km > 0, get: (e) => Number(e.kilometers_travelled).toFixed(0), total: totals.km.toFixed(0) },
+    { header: "TA/KM", align: "right", show: expenses.some((e) => Number(e.ta_per_km) > 0), get: (e) => Number(e.ta_per_km).toFixed(2) },
+    { header: "Travel Allow.", align: "right", show: totals.ta > 0, get: (e) => (Number(e.kilometers_travelled) * Number(e.ta_per_km)).toFixed(2), total: totals.ta.toFixed(2) },
+    { header: "Lodging", align: "right", show: totals.lodge > 0, get: (e) => Number(e.lodging_expense).toFixed(2), total: totals.lodge.toFixed(2) },
+    { header: "Fare", align: "right", show: totals.fare > 0, get: (e) => Number(e.travel_fare).toFixed(2), total: totals.fare.toFixed(2) },
+    { header: "Other", align: "right", show: totals.other > 0, get: (e) => Number(e.other_expense).toFixed(2), total: totals.other.toFixed(2) },
+    { header: "Other Breakdown", width: "auto", show: expenses.some((e) => e.other_expense_note), get: (e) => e.other_expense_note ?? "" },
+    { header: "Total", align: "right", bold: true, show: true, get: (e) => {
+        const ta = Number(e.kilometers_travelled) * Number(e.ta_per_km);
+        return (Number(e.daily_allowance) + ta + Number(e.lodging_expense) + Number(e.travel_fare) + Number(e.other_expense)).toFixed(2);
+      }, total: totals.total.toFixed(2) },
+  ];
+  const cols = allCols.filter((c) => c.show);
+  const columnStyles: Record<number, { cellWidth?: number | "auto"; halign?: "left" | "right"; fontStyle?: "bold" }> = {};
+  cols.forEach((c, i) => {
+    columnStyles[i] = {
+      ...(c.width ? { cellWidth: c.width } : {}),
+      ...(c.align ? { halign: c.align } : {}),
+      ...(c.bold ? { fontStyle: "bold" } : {}),
+    };
+  });
+
   autoTable(doc, {
     startY: kpiTop + kpiH + 6,
-    head: [["Date", "Employee", "Daily Allow.", "KM", "TA/KM", "Travel Allow.", "Lodging", "Fare", "Other", "Note", "Total"]],
-    body: expenses.map((e) => {
-      const ta = Number(e.kilometers_travelled) * Number(e.ta_per_km);
-      const total = Number(e.daily_allowance) + ta + Number(e.lodging_expense) + Number(e.travel_fare) + Number(e.other_expense);
-      return [
-        format(parseISO(e.expense_date), "MMM d, yyyy"),
-        pMap.get(e.user_id)?.full_name ?? "-",
-        Number(e.daily_allowance).toFixed(2),
-        Number(e.kilometers_travelled).toFixed(0),
-        Number(e.ta_per_km).toFixed(2),
-        ta.toFixed(2),
-        Number(e.lodging_expense).toFixed(2),
-        Number(e.travel_fare).toFixed(2),
-        Number(e.other_expense).toFixed(2),
-        e.other_expense_note ?? "",
-        total.toFixed(2),
-      ];
-    }),
-    foot: [[
-      "Total", "",
-      totals.da.toFixed(2),
-      totals.km.toFixed(0),
-      "",
-      totals.ta.toFixed(2),
-      totals.lodge.toFixed(2),
-      totals.fare.toFixed(2),
-      totals.other.toFixed(2),
-      "",
-      totals.total.toFixed(2),
-    ]],
+    head: [cols.map((c) => c.header)],
+    body: expenses.map((e) => cols.map((c) => c.get(e))),
+    foot: [cols.map((c, i) => i === 0 ? "Total" : (c.total ?? ""))],
     styles: { fontSize: 8.5, cellPadding: 3, valign: "top", textColor: [40, 45, 65], lineColor: [225, 230, 240], lineWidth: 0.1 },
     headStyles: { fillColor: [BRAND.r, BRAND.g, BRAND.b], textColor: 255, fontStyle: "bold", fontSize: 9, cellPadding: 4, halign: "left" },
     footStyles: { fillColor: [LIGHT.r, LIGHT.g, LIGHT.b], textColor: [BRAND.r, BRAND.g, BRAND.b], fontStyle: "bold" },
     alternateRowStyles: { fillColor: [LIGHT.r, LIGHT.g, LIGHT.b] },
-    columnStyles: {
-      0: { cellWidth: 26, fontStyle: "bold" },
-      1: { cellWidth: 34 },
-      2: { halign: "right" },
-      3: { halign: "right" },
-      4: { halign: "right" },
-      5: { halign: "right" },
-      6: { halign: "right" },
-      7: { halign: "right" },
-      8: { halign: "right" },
-      9: { cellWidth: "auto" },
-      10: { halign: "right", fontStyle: "bold" },
-    },
+    columnStyles,
     didDrawPage: () => {
       const page = doc.getNumberOfPages();
       const pageCount = doc.getNumberOfPages();
