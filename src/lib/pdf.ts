@@ -215,3 +215,166 @@ export function exportReportsCsv(opts: {
   a.click();
   URL.revokeObjectURL(url);
 }
+export function exportExpensesPdf(opts: {
+  expenses: TravelExpense[];
+  profiles: { id: string; full_name: string; email: string }[];
+  title: string;
+  subtitle?: string;
+}) {
+  const { expenses, profiles, title, subtitle } = opts;
+  const doc = new jsPDF({ orientation: "landscape" });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const pMap = new Map(profiles.map((p) => [p.id, p]));
+
+  // Header
+  doc.setFillColor(BRAND.r, BRAND.g, BRAND.b);
+  doc.rect(0, 0, W, 28, "F");
+  doc.setFillColor(ACCENT.r, ACCENT.g, ACCENT.b);
+  doc.rect(0, 28, W, 1.5, "F");
+
+  doc.setFillColor(ACCENT.r, ACCENT.g, ACCENT.b);
+  doc.circle(20, 14, 6, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("S", 20, 16.5, { align: "center" });
+
+  doc.setFontSize(15);
+  doc.text("Sales DCR System", 30, 13);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(200, 210, 230);
+  doc.text("Travelling Expenses Report", 30, 19);
+
+  doc.setFontSize(8);
+  doc.text("Generated", W - 14, 13, { align: "right" });
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.text(format(new Date(), "PP p"), W - 14, 19, { align: "right" });
+
+  // Title
+  doc.setTextColor(BRAND.r, BRAND.g, BRAND.b);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.text(title, 14, 42);
+  if (subtitle) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
+    doc.text(subtitle, 14, 48);
+  }
+
+  // KPIs
+  const totals = expenses.reduce(
+    (acc, e) => {
+      const km = Number(e.kilometers_travelled) * Number(e.ta_per_km);
+      acc.da += Number(e.daily_allowance);
+      acc.km += Number(e.kilometers_travelled);
+      acc.ta += km;
+      acc.lodge += Number(e.lodging_expense);
+      acc.fare += Number(e.travel_fare);
+      acc.other += Number(e.other_expense);
+      acc.total += Number(e.daily_allowance) + km + Number(e.lodging_expense) + Number(e.travel_fare) + Number(e.other_expense);
+      return acc;
+    },
+    { da: 0, km: 0, ta: 0, lodge: 0, fare: 0, other: 0, total: 0 },
+  );
+
+  const kpis = [
+    { label: "Entries", value: String(expenses.length) },
+    { label: "Total KM", value: totals.km.toFixed(0) },
+    { label: "Travel Allow.", value: totals.ta.toFixed(2) },
+    { label: "Lodging", value: totals.lodge.toFixed(2) },
+    { label: "Fare", value: totals.fare.toFixed(2) },
+    { label: "Grand Total", value: totals.total.toFixed(2) },
+  ];
+
+  const kpiTop = 54;
+  const kpiH = 18;
+  const gap = 4;
+  const kpiW = (W - 28 - gap * (kpis.length - 1)) / kpis.length;
+  kpis.forEach((k, i) => {
+    const x = 14 + i * (kpiW + gap);
+    doc.setFillColor(LIGHT.r, LIGHT.g, LIGHT.b);
+    doc.roundedRect(x, kpiTop, kpiW, kpiH, 2, 2, "F");
+    doc.setFillColor(ACCENT.r, ACCENT.g, ACCENT.b);
+    doc.rect(x, kpiTop, 1.2, kpiH, "F");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
+    doc.text(k.label.toUpperCase(), x + 4, kpiTop + 6);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(BRAND.r, BRAND.g, BRAND.b);
+    doc.text(k.value, x + 4, kpiTop + 14);
+  });
+
+  autoTable(doc, {
+    startY: kpiTop + kpiH + 6,
+    head: [["Date", "Employee", "Daily Allow.", "KM", "TA/KM", "Travel Allow.", "Lodging", "Fare", "Other", "Note", "Total"]],
+    body: expenses.map((e) => {
+      const ta = Number(e.kilometers_travelled) * Number(e.ta_per_km);
+      const total = Number(e.daily_allowance) + ta + Number(e.lodging_expense) + Number(e.travel_fare) + Number(e.other_expense);
+      return [
+        format(parseISO(e.expense_date), "MMM d, yyyy"),
+        pMap.get(e.user_id)?.full_name ?? "-",
+        Number(e.daily_allowance).toFixed(2),
+        Number(e.kilometers_travelled).toFixed(0),
+        Number(e.ta_per_km).toFixed(2),
+        ta.toFixed(2),
+        Number(e.lodging_expense).toFixed(2),
+        Number(e.travel_fare).toFixed(2),
+        Number(e.other_expense).toFixed(2),
+        e.other_expense_note ?? "",
+        total.toFixed(2),
+      ];
+    }),
+    foot: [[
+      "Total", "",
+      totals.da.toFixed(2),
+      totals.km.toFixed(0),
+      "",
+      totals.ta.toFixed(2),
+      totals.lodge.toFixed(2),
+      totals.fare.toFixed(2),
+      totals.other.toFixed(2),
+      "",
+      totals.total.toFixed(2),
+    ]],
+    styles: { fontSize: 8.5, cellPadding: 3, valign: "top", textColor: [40, 45, 65], lineColor: [225, 230, 240], lineWidth: 0.1 },
+    headStyles: { fillColor: [BRAND.r, BRAND.g, BRAND.b], textColor: 255, fontStyle: "bold", fontSize: 9, cellPadding: 4, halign: "left" },
+    footStyles: { fillColor: [LIGHT.r, LIGHT.g, LIGHT.b], textColor: [BRAND.r, BRAND.g, BRAND.b], fontStyle: "bold" },
+    alternateRowStyles: { fillColor: [LIGHT.r, LIGHT.g, LIGHT.b] },
+    columnStyles: {
+      0: { cellWidth: 26, fontStyle: "bold" },
+      1: { cellWidth: 34 },
+      2: { halign: "right" },
+      3: { halign: "right" },
+      4: { halign: "right" },
+      5: { halign: "right" },
+      6: { halign: "right" },
+      7: { halign: "right" },
+      8: { halign: "right" },
+      9: { cellWidth: "auto" },
+      10: { halign: "right", fontStyle: "bold" },
+    },
+    didDrawPage: () => {
+      const page = doc.getNumberOfPages();
+      const pageCount = doc.getNumberOfPages();
+      doc.setDrawColor(225, 230, 240);
+      doc.setLineWidth(0.3);
+      doc.line(14, H - 12, W - 14, H - 12);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
+      doc.text("Authorized Signature: ______________________", 14, H - 6);
+      doc.text("Sales DCR System - Confidential", W / 2, H - 6, { align: "center" });
+      doc.text(`Page ${page} of ${pageCount}`, W - 14, H - 6, { align: "right" });
+    },
+    margin: { top: 14, left: 14, right: 14, bottom: 16 },
+  });
+
+  doc.save(`${title.replace(/\s+/g, "_")}_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+}
