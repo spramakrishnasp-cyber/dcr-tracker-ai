@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Separator } from "@/components/ui/separator";
 
 export const Route = createFileRoute("/_app/reports/new")({
   component: NewReport,
@@ -39,7 +40,23 @@ function NewReport() {
     meeting_outcome: "",
     next_follow_up: "",
     location: "",
+    daily_allowance: "",
+    kilometers_travelled: "",
+    ta_per_km: "",
+    lodging_expense: "",
+    travel_fare: "",
+    other_expense: "",
+    other_expense_note: "",
   });
+
+  const num = (v: string) => (v === "" ? 0 : Number(v) || 0);
+  const kmAmount = num(form.kilometers_travelled) * num(form.ta_per_km);
+  const totalExpense =
+    num(form.daily_allowance) +
+    kmAmount +
+    num(form.lodging_expense) +
+    num(form.travel_fare) +
+    num(form.other_expense);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -55,6 +72,13 @@ function NewReport() {
         meeting_outcome: form.meeting_outcome || null,
         next_follow_up: form.next_follow_up || null,
         location: form.location || null,
+        daily_allowance: num(form.daily_allowance),
+        kilometers_travelled: num(form.kilometers_travelled),
+        ta_per_km: num(form.ta_per_km),
+        lodging_expense: num(form.lodging_expense),
+        travel_fare: num(form.travel_fare),
+        other_expense: num(form.other_expense),
+        other_expense_note: form.other_expense_note || null,
       });
       if (error) throw error;
     },
