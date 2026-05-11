@@ -21,6 +21,7 @@ import { Route as AppBackupRouteImport } from './routes/_app.backup'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppReportsIndexRouteImport } from './routes/_app.reports.index'
 import { Route as AppReportsNewRouteImport } from './routes/_app.reports.new'
+import { Route as ApiPublicHooksFollowUpRemindersRouteImport } from './routes/api/public/hooks/follow-up-reminders'
 import { Route as AppReportsReportIdEditRouteImport } from './routes/_app.reports.$reportId.edit'
 
 const LoginRoute = LoginRouteImport.update({
@@ -82,6 +83,12 @@ const AppReportsNewRoute = AppReportsNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AppReportsRoute,
 } as any)
+const ApiPublicHooksFollowUpRemindersRoute =
+  ApiPublicHooksFollowUpRemindersRouteImport.update({
+    id: '/api/public/hooks/follow-up-reminders',
+    path: '/api/public/hooks/follow-up-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppReportsReportIdEditRoute = AppReportsReportIdEditRouteImport.update({
   id: '/$reportId/edit',
   path: '/$reportId/edit',
@@ -101,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/reports/new': typeof AppReportsNewRoute
   '/reports/': typeof AppReportsIndexRoute
   '/reports/$reportId/edit': typeof AppReportsReportIdEditRoute
+  '/api/public/hooks/follow-up-reminders': typeof ApiPublicHooksFollowUpRemindersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -114,6 +122,7 @@ export interface FileRoutesByTo {
   '/reports/new': typeof AppReportsNewRoute
   '/reports': typeof AppReportsIndexRoute
   '/reports/$reportId/edit': typeof AppReportsReportIdEditRoute
+  '/api/public/hooks/follow-up-reminders': typeof ApiPublicHooksFollowUpRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -130,6 +139,7 @@ export interface FileRoutesById {
   '/_app/reports/new': typeof AppReportsNewRoute
   '/_app/reports/': typeof AppReportsIndexRoute
   '/_app/reports/$reportId/edit': typeof AppReportsReportIdEditRoute
+  '/api/public/hooks/follow-up-reminders': typeof ApiPublicHooksFollowUpRemindersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/reports/'
     | '/reports/$reportId/edit'
+    | '/api/public/hooks/follow-up-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/reports'
     | '/reports/$reportId/edit'
+    | '/api/public/hooks/follow-up-reminders'
   id:
     | '__root__'
     | '/'
@@ -174,12 +186,14 @@ export interface FileRouteTypes {
     | '/_app/reports/new'
     | '/_app/reports/'
     | '/_app/reports/$reportId/edit'
+    | '/api/public/hooks/follow-up-reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicHooksFollowUpRemindersRoute: typeof ApiPublicHooksFollowUpRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -268,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsNewRouteImport
       parentRoute: typeof AppReportsRoute
     }
+    '/api/public/hooks/follow-up-reminders': {
+      id: '/api/public/hooks/follow-up-reminders'
+      path: '/api/public/hooks/follow-up-reminders'
+      fullPath: '/api/public/hooks/follow-up-reminders'
+      preLoaderRoute: typeof ApiPublicHooksFollowUpRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/reports/$reportId/edit': {
       id: '/_app/reports/$reportId/edit'
       path: '/$reportId/edit'
@@ -320,6 +341,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicHooksFollowUpRemindersRoute: ApiPublicHooksFollowUpRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
