@@ -24,154 +24,173 @@ export function exportReportsPdf(opts: {
   subtitle?: string;
 }) {
   const { reports, customers, profiles, title, subtitle } = opts;
-  const doc = new jsPDF({ orientation: "landscape" });
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
   const cMap = new Map(customers.map((c) => [c.id, c]));
   const pMap = new Map(profiles.map((p) => [p.id, p]));
 
-  // ===== HEADER =====
-  doc.setFillColor(BRAND.r, BRAND.g, BRAND.b);
-  doc.rect(0, 0, W, 28, "F");
-  doc.setFillColor(ACCENT.r, ACCENT.g, ACCENT.b);
-  doc.rect(0, 28, W, 1.5, "F");
+  const LEFT = 18;
+  const RIGHT = W - 18;
+  const CONTENT_W = RIGHT - LEFT;
+  const BOTTOM = H - 18;
 
-  // Logo mark
-  doc.setFillColor(ACCENT.r, ACCENT.g, ACCENT.b);
-  doc.circle(20, 14, 6, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.text("S", 20, 16.5, { align: "center" });
+  const drawHeaderRule = (y: number) => {
+    doc.setDrawColor(60, 60, 60);
+    doc.setLineWidth(0.4);
+    doc.line(LEFT, y, RIGHT, y);
+  };
 
-  doc.setFontSize(15);
-  doc.text("Sales DCR System", 30, 13);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(200, 210, 230);
-  doc.text("Daily Call Report Management", 30, 19);
+  const drawFooter = (pageNum: number, totalPages: number) => {
+    doc.setDrawColor(225, 230, 240);
+    doc.setLineWidth(0.3);
+    doc.line(LEFT, H - 14, RIGHT, H - 14);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
+    doc.text("Sales DCR System - Confidential", LEFT, H - 8);
+    doc.text(`Page ${pageNum} of ${totalPages}`, RIGHT, H - 8, { align: "right" });
+  };
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(200, 210, 230);
-  doc.text("Generated", W - 14, 13, { align: "right" });
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(255, 255, 255);
-  doc.text(format(new Date(), "PP p"), W - 14, 19, { align: "right" });
-
-  // ===== TITLE =====
+  // Title page header
+  let y = 22;
+  drawHeaderRule(y);
+  y += 8;
   doc.setTextColor(BRAND.r, BRAND.g, BRAND.b);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text(title, 14, 42);
+  doc.setFontSize(16);
+  doc.text(title, LEFT, y);
   if (subtitle) {
+    y += 6;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(10);
     doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
-    doc.text(subtitle, 14, 48);
+    doc.text(subtitle, LEFT, y);
+  }
+  y += 4;
+  drawHeaderRule(y);
+  y += 8;
+
+  // Split a discussion into intro (Note) + numbered items.
+  // Recognises lines starting with "1." / "2)" / "•" / "-".
+  const splitDiscussion = (raw: string | null) => {
+    if (!raw) return { note: "", items: [] as string[] };
+    const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const noteLines: string[] = [];
+    const items: string[] = [];
+    let inItems = false;
+    let current = "";
+    const itemStart = /^(\d+)[.)]\s+(.*)$/;
+    const bulletStart = /^[-•*]\s+(.*)$/;
+    for (const line of lines) {
+      const m1 = line.match(itemStart);
+      const m2 = line.match(bulletStart);
+      if (m1 || m2) {
+        if (current) items.push(current.trim());
+        current = (m1 ? m1[2] : m2![1]) ?? "";
+        inItems = true;
+      } else if (inItems) {
+        current += " " + line;
+      } else {
+        noteLines.push(line);
+      }
+    }
+    if (current) items.push(current.trim());
+    return { note: noteLines.join(" "), items };
+  };
+
+  const writeLabelValue = (label: string, value: string, startY: number): number => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(20, 20, 20);
+    const labelText = `${label}:`;
+    doc.text(labelText, LEFT, startY);
+    const labelWidth = doc.getTextWidth(labelText) + 1.5;
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(40, 40, 40);
+    const wrapped = doc.splitTextToSize(value || "", CONTENT_W - labelWidth);
+    doc.text(wrapped, LEFT + labelWidth, startY);
+    return startY + wrapped.length * 5.5;
+  };
+
+  const ensureSpace = (need: number) => {
+    if (y + need > BOTTOM) {
+      doc.addPage();
+      y = 22;
+      drawHeaderRule(y);
+      y += 8;
+    }
+  };
+
+  reports.forEach((r, idx) => {
+    const c = cMap.get(r.customer_id ?? "");
+    const p = pMap.get(r.user_id);
+    const { note, items } = splitDiscussion(r.discussion);
+
+    const dateStr = `${format(parseISO(r.call_date), "MMMM d, yyyy")}${r.call_time ? ` at ${format(new Date(`2000-01-01T${r.call_time}`), "h:mm a")}` : ""}`;
+    const contact = [c?.contact_person, c?.customer_name].filter(Boolean).join(" - ") || c?.customer_name || "-";
+
+    ensureSpace(60);
+
+    y = writeLabelValue("Date", dateStr, y);
+    y = writeLabelValue("Contact", contact, y);
+    if (c?.company_name) y = writeLabelValue("Company Name", c.company_name, y);
+    y = writeLabelValue("Title", r.meeting_type, y);
+    y = writeLabelValue("Location", r.location ?? "", y);
+    y = writeLabelValue("Employee", p?.full_name ?? "-", y);
+    y = writeLabelValue("Status", r.order_status, y);
+    if (r.product_discussed) y = writeLabelValue("Product", r.product_discussed, y);
+    if (r.next_follow_up) y = writeLabelValue("Next Follow-up", format(parseISO(r.next_follow_up), "MMMM d, yyyy"), y);
+
+    if (note) {
+      y += 2;
+      ensureSpace(10);
+      y = writeLabelValue("Note", note, y);
+    }
+
+    if (items.length) {
+      y += 3;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(40, 40, 40);
+      items.forEach((item, i) => {
+        const text = `${i + 1}. ${item}`;
+        const wrapped = doc.splitTextToSize(text, CONTENT_W);
+        ensureSpace(wrapped.length * 5.5 + 3);
+        doc.text(wrapped, LEFT, y);
+        y += wrapped.length * 5.5 + 2;
+      });
+    }
+
+    if (r.meeting_outcome) {
+      y += 2;
+      ensureSpace(10);
+      y = writeLabelValue("Outcome", r.meeting_outcome, y);
+    }
+
+    // Separator between reports
+    if (idx < reports.length - 1) {
+      y += 6;
+      ensureSpace(8);
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.2);
+      doc.line(LEFT, y, RIGHT, y);
+      y += 8;
+    }
+  });
+
+  if (reports.length === 0) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(11);
+    doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
+    doc.text("No reports to display.", LEFT, y);
   }
 
-  // ===== KPI CARDS =====
-  const uniqCustomers = new Set(reports.map((r) => r.customer_id).filter(Boolean)).size;
-  const uniqEmployees = new Set(reports.map((r) => r.user_id)).size;
-  const orders = reports.filter((r) => r.order_status === "Order Confirmed").length;
-  const followUps = reports.filter((r) => r.next_follow_up).length;
-
-  const kpis: { label: string; value: string }[] = [
-    { label: "Total Calls", value: String(reports.length) },
-    { label: "Customers", value: String(uniqCustomers) },
-    { label: "Employees", value: String(uniqEmployees) },
-    { label: "Orders Confirmed", value: String(orders) },
-    { label: "Follow-ups", value: String(followUps) },
-  ];
-
-  const kpiTop = 54;
-  const kpiH = 18;
-  const gap = 4;
-  const kpiW = (W - 28 - gap * (kpis.length - 1)) / kpis.length;
-  kpis.forEach((k, i) => {
-    const x = 14 + i * (kpiW + gap);
-    doc.setFillColor(LIGHT.r, LIGHT.g, LIGHT.b);
-    doc.roundedRect(x, kpiTop, kpiW, kpiH, 2, 2, "F");
-    doc.setFillColor(ACCENT.r, ACCENT.g, ACCENT.b);
-    doc.rect(x, kpiTop, 1.2, kpiH, "F");
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.5);
-    doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
-    doc.text(k.label.toUpperCase(), x + 4, kpiTop + 6);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.setTextColor(BRAND.r, BRAND.g, BRAND.b);
-    doc.text(k.value, x + 4, kpiTop + 14);
-  });
-
-  // ===== TABLE =====
-  autoTable(doc, {
-    startY: kpiTop + kpiH + 6,
-    head: [["Date", "Employee", "Customer", "Type", "Discussion", "Status", "Follow-up"]],
-    body: reports.map((r) => {
-      const c = cMap.get(r.customer_id ?? "");
-      return [
-        `${format(parseISO(r.call_date), "MMM d, yyyy")}\n${r.call_time?.slice(0, 5) ?? ""}`,
-        pMap.get(r.user_id)?.full_name ?? "-",
-        `${c?.customer_name ?? "-"}\n${c?.company_name ?? ""}`,
-        r.meeting_type,
-        [r.discussion, r.product_discussed ? `Product: ${r.product_discussed}` : ""]
-          .filter(Boolean).join("\n"),
-        r.order_status,
-        r.next_follow_up ? format(parseISO(r.next_follow_up), "MMM d, yyyy") : "-",
-      ];
-    }),
-    styles: {
-      fontSize: 8.5,
-      cellPadding: 3,
-      valign: "top",
-      textColor: [40, 45, 65],
-      lineColor: [225, 230, 240],
-      lineWidth: 0.1,
-    },
-    headStyles: {
-      fillColor: [BRAND.r, BRAND.g, BRAND.b],
-      textColor: 255,
-      fontStyle: "bold",
-      fontSize: 9,
-      cellPadding: 4,
-      halign: "left",
-    },
-    alternateRowStyles: { fillColor: [LIGHT.r, LIGHT.g, LIGHT.b] },
-    columnStyles: {
-      0: { cellWidth: 28, fontStyle: "bold" },
-      1: { cellWidth: 32 },
-      2: { cellWidth: 42 },
-      3: { cellWidth: 22 },
-      4: { cellWidth: "auto" },
-      5: { cellWidth: 32, halign: "center" },
-      6: { cellWidth: 24 },
-    },
-    didParseCell: (data) => {
-      if (data.section === "body" && data.column.index === 5) {
-        const color = STATUS_COLORS[String(data.cell.raw)] ?? [100, 100, 100];
-        data.cell.styles.textColor = color;
-        data.cell.styles.fontStyle = "bold";
-        data.cell.styles.fontSize = 8;
-      }
-    },
-    didDrawPage: () => {
-      const page = doc.getNumberOfPages();
-      const pageCount = doc.getNumberOfPages();
-      doc.setDrawColor(225, 230, 240);
-      doc.setLineWidth(0.3);
-      doc.line(14, H - 12, W - 14, H - 12);
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
-      doc.text("Authorized Signature: ______________________", 14, H - 6);
-      doc.text("Sales DCR System - Confidential", W / 2, H - 6, { align: "center" });
-      doc.text(`Page ${page} of ${pageCount}`, W - 14, H - 6, { align: "right" });
-    },
-    margin: { top: 14, left: 14, right: 14, bottom: 16 },
-  });
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    drawFooter(i, totalPages);
+  }
 
   doc.save(`${title.replace(/\s+/g, "_")}_${format(new Date(), "yyyy-MM-dd")}.pdf`);
 }
