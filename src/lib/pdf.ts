@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format, parseISO } from "date-fns";
 import type { CallReport, Customer, TravelExpense } from "./queries";
+import { supabase } from "@/integrations/supabase/client";
 
 const BRAND = { r: 28, g: 45, b: 92 };       // deep navy
 const ACCENT = { r: 234, g: 88, b: 12 };     // warm orange
@@ -234,7 +235,7 @@ export function exportReportsCsv(opts: {
   a.click();
   URL.revokeObjectURL(url);
 }
-export function exportExpensesPdf(opts: {
+export async function exportExpensesPdf(opts: {
   expenses: TravelExpense[];
   profiles: { id: string; full_name: string; email: string }[];
   title: string;
@@ -385,6 +386,87 @@ export function exportExpensesPdf(opts: {
     },
     margin: { top: 14, left: 14, right: 14, bottom: 16 },
   });
+
+  // ===== Append attached receipts =====
+  type Receipt = { path: string; label: string };
+  const receipts: Receipt[] = [];
+  for (const e of expenses) {
+    const dateLabel = format(parseISO(e.expense_date), "MMM d, yyyy");
+    if (e.lodging_receipt_url) receipts.push({ path: e.lodging_receipt_url, label: `${dateLabel} - Lodging` });
+    if (e.travel_fare_receipt_url) receipts.push({ path: e.travel_fare_receipt_url, label: `${dateLabel} - Travel Fare` });
+    (e.other_expenses_items ?? []).forEach((it) => {
+      if (it.receipt_url) receipts.push({ path: it.receipt_url, label: `${dateLabel} - ${it.category}` });
+    });
+  }
+
+  if (receipts.length) {
+    doc.addPage();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(BRAND.r, BRAND.g, BRAND.b);
+    doc.text("Attached Receipts", 14, 20);
+    doc.setDrawColor(225, 230, 240);
+    doc.line(14, 24, W - 14, 24);
+
+    for (const r of receipts) {
+      try {
+        const { data: signed } = await supabase.storage
+          .from("expense-receipts")
+          .createSignedUrl(r.path, 60 * 10);
+        if (!signed?.signedUrl) continue;
+        const res = await fetch(signed.signedUrl);
+        const blob = await res.blob();
+        const isImage = blob.type.startsWith("image/");
+        const isPdf = blob.type === "application/pdf" || r.path.toLowerCase().endsWith(".pdf");
+
+        doc.addPage();
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(BRAND.r, BRAND.g, BRAND.b);
+        doc.text(r.label, 14, 16);
+        doc.setDrawColor(225, 230, 240);
+        doc.line(14, 19, W - 14, 19);
+
+        if (isImage) {
+          const dataUrl: string = await new Promise((resolve, reject) => {
+            const fr = new FileReader();
+            fr.onload = () => resolve(fr.result as string);
+            fr.onerror = reject;
+            fr.readAsDataURL(blob);
+          });
+          // Load image to get natural dimensions for aspect-correct fit
+          const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+            img.onerror = () => resolve({ w: 1, h: 1 });
+            img.src = dataUrl;
+          });
+          const maxW = W - 28;
+          const maxH = H - 35;
+          const ratio = Math.min(maxW / dims.w, maxH / dims.h);
+          const drawW = dims.w * ratio;
+          const drawH = dims.h * ratio;
+          const fmt = blob.type.includes("png") ? "PNG" : "JPEG";
+          doc.addImage(dataUrl, fmt, (W - drawW) / 2, 24, drawW, drawH);
+        } else {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10);
+          doc.setTextColor(60, 60, 60);
+          doc.text(
+            isPdf
+              ? "PDF receipt attached - open the source file to view."
+              : `Attachment type ${blob.type || "unknown"} - cannot preview inline.`,
+            14,
+            32,
+          );
+          doc.setTextColor(37, 99, 235);
+          doc.textWithLink("Open receipt", 14, 40, { url: signed.signedUrl });
+        }
+      } catch {
+        // skip failed receipt
+      }
+    }
+  }
 
   doc.save(`${title.replace(/\s+/g, "_")}_${format(new Date(), "yyyy-MM-dd")}.pdf`);
 }

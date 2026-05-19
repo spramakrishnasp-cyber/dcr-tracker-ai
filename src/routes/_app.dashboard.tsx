@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchReports, fetchCustomers, fetchProfiles, fetchExpenses } from "@/lib/queries";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PhoneCall, Users, Calendar, Bell, TrendingUp, Wallet } from "lucide-react";
-import { format, isToday, startOfWeek, startOfMonth, parseISO, isAfter } from "date-fns";
+import { PhoneCall, Users, Calendar, Bell, TrendingUp, Wallet, CalendarClock } from "lucide-react";
+import { format, isToday, startOfWeek, startOfMonth, parseISO, isAfter, compareAsc } from "date-fns";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: Dashboard,
@@ -36,13 +36,11 @@ function Dashboard() {
     "No Response": "bg-muted text-muted-foreground",
   };
 
-  // Team perf
-  const perEmp = new Map<string, number>();
-  reports.forEach((r) => perEmp.set(r.user_id, (perEmp.get(r.user_id) ?? 0) + 1));
-  const team = profiles
-    .map((p) => ({ name: p.full_name || p.email, calls: perEmp.get(p.id) ?? 0 }))
-    .sort((a, b) => b.calls - a.calls)
-    .slice(0, 5);
+  // Upcoming follow-ups
+  const upcoming = reports
+    .filter((r) => r.next_follow_up && !isAfter(today, parseISO(r.next_follow_up)))
+    .sort((a, b) => compareAsc(parseISO(a.next_follow_up!), parseISO(b.next_follow_up!)))
+    .slice(0, 8);
 
   const recent = reports.slice(0, 6);
   const customerById = new Map(customers.map((c) => [c.id, c]));
@@ -125,27 +123,29 @@ function Dashboard() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="font-semibold mb-4">Team Performance</h2>
-          <div className="space-y-3">
-            {team.length === 0 && (
-              <p className="text-sm text-muted-foreground">No data yet.</p>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-primary" /> Follow-ups
+            </h2>
+            <span className="text-xs text-muted-foreground">Next {upcoming.length}</span>
+          </div>
+          <div className="divide-y divide-border">
+            {upcoming.length === 0 && (
+              <p className="text-sm text-muted-foreground py-6 text-center">No upcoming follow-ups.</p>
             )}
-            {team.map((t) => {
-              const max = Math.max(...team.map((x) => x.calls), 1);
+            {upcoming.map((r) => {
+              const c = r.customer_id ? customerById.get(r.customer_id) : null;
+              const d = parseISO(r.next_follow_up!);
               return (
-                <div key={t.name}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="truncate">{t.name}</span>
-                    <span className="text-muted-foreground">{t.calls}</span>
+                <div key={r.id} className="py-2.5">
+                  <div className="text-sm font-medium truncate">
+                    {c?.customer_name || "Unknown customer"}
                   </div>
-                  <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${(t.calls / max) * 100}%`,
-                        background: "var(--gradient-primary)",
-                      }}
-                    />
+                  <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                    <span>{format(d, "MMM d, yyyy")}</span>
+                    {r.next_follow_up_time && (
+                      <span>· {format(new Date(`2000-01-01T${r.next_follow_up_time}`), "h:mm a")}</span>
+                    )}
                   </div>
                 </div>
               );
