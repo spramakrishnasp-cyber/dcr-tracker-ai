@@ -60,6 +60,7 @@ export type Database = {
           meeting_outcome: string | null
           meeting_type: Database["public"]["Enums"]["meeting_type"]
           next_follow_up: string | null
+          next_follow_up_time: string | null
           order_status: Database["public"]["Enums"]["order_status"]
           other_expense: number | null
           other_expense_note: string | null
@@ -84,6 +85,7 @@ export type Database = {
           meeting_outcome?: string | null
           meeting_type: Database["public"]["Enums"]["meeting_type"]
           next_follow_up?: string | null
+          next_follow_up_time?: string | null
           order_status?: Database["public"]["Enums"]["order_status"]
           other_expense?: number | null
           other_expense_note?: string | null
@@ -108,6 +110,7 @@ export type Database = {
           meeting_outcome?: string | null
           meeting_type?: Database["public"]["Enums"]["meeting_type"]
           next_follow_up?: string | null
+          next_follow_up_time?: string | null
           order_status?: Database["public"]["Enums"]["order_status"]
           other_expense?: number | null
           other_expense_note?: string | null
@@ -241,12 +244,14 @@ export type Database = {
           id: string
           kilometers_travelled: number
           lodging_expense: number
+          lodging_receipt_url: string | null
           notes: string | null
           other_expense: number
           other_expense_note: string | null
           other_expenses_items: Json
           ta_per_km: number
           travel_fare: number
+          travel_fare_receipt_url: string | null
           updated_at: string
           user_id: string
         }
@@ -258,12 +263,14 @@ export type Database = {
           id?: string
           kilometers_travelled?: number
           lodging_expense?: number
+          lodging_receipt_url?: string | null
           notes?: string | null
           other_expense?: number
           other_expense_note?: string | null
           other_expenses_items?: Json
           ta_per_km?: number
           travel_fare?: number
+          travel_fare_receipt_url?: string | null
           updated_at?: string
           user_id: string
         }
@@ -275,12 +282,14 @@ export type Database = {
           id?: string
           kilometers_travelled?: number
           lodging_expense?: number
+          lodging_receipt_url?: string | null
           notes?: string | null
           other_expense?: number
           other_expense_note?: string | null
           other_expenses_items?: Json
           ta_per_km?: number
           travel_fare?: number
+          travel_fare_receipt_url?: string | null
           updated_at?: string
           user_id?: string
         }

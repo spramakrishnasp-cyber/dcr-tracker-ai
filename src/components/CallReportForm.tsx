@@ -36,6 +36,7 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
     order_status: (existing?.order_status ?? "Interested") as (typeof orderStatuses)[number],
     meeting_outcome: existing?.meeting_outcome ?? "",
     next_follow_up: existing?.next_follow_up ?? "",
+    next_follow_up_time: existing?.next_follow_up_time?.slice(0, 5) ?? "",
     location: existing?.location ?? "",
   });
 
@@ -51,6 +52,7 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
         order_status: form.order_status,
         meeting_outcome: form.meeting_outcome || null,
         next_follow_up: form.next_follow_up || null,
+        next_follow_up_time: form.next_follow_up ? (form.next_follow_up_time || null) : null,
         location: form.location || null,
       };
       if (isEdit) {
@@ -65,12 +67,13 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
       if (form.next_follow_up) {
         try {
           const customer = customers.find((c) => c.id === form.customer_id);
+          const followUpTime = form.next_follow_up_time || "09:00";
           await fetch("https://hook.eu1.make.com/wyajdhgby9bus2a3e4eaeqb8ktuddesa", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               customerName: customer?.customer_name ?? "",
-              followUpDateTime: `${form.next_follow_up}T${form.call_time || "09:00"}`,
+              followUpDateTime: `${form.next_follow_up}T${followUpTime}`,
               notes: form.discussion || form.meeting_outcome || "",
               phone: customer?.mobile ?? "",
             }),
@@ -174,6 +177,14 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
           </Field>
           <Field label="Next Follow-up">
             <Input type="date" value={form.next_follow_up} onChange={(e) => setForm({ ...form, next_follow_up: e.target.value })} />
+          </Field>
+          <Field label="Follow-up Time">
+            <Input
+              type="time"
+              value={form.next_follow_up_time}
+              onChange={(e) => setForm({ ...form, next_follow_up_time: e.target.value })}
+              disabled={!form.next_follow_up}
+            />
           </Field>
           <Field label="Location (GPS / address)">
             <div className="flex gap-2">

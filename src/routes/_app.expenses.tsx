@@ -14,7 +14,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, FileDown, Pencil, Trash2, Wallet, X } from "lucide-react";
+import { Plus, FileDown, Pencil, Trash2, Wallet, X, Paperclip, Upload } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { exportExpensesPdf } from "@/lib/pdf";
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_app/expenses")({
 });
 
 const OTHER_CATEGORIES = ["Mobile bill", "Cab", "Food bill", "Toll charges", "Courier", "Misc"] as const;
-type OtherItem = { category: string; amount: string; note: string };
+type OtherItem = { category: string; amount: string; note: string; receipt_url?: string | null };
 
 type FormState = {
   expense_date: string;
@@ -36,6 +36,8 @@ type FormState = {
   travel_fare: string;
   other_items: OtherItem[];
   notes: string;
+  lodging_receipt_url: string | null;
+  travel_fare_receipt_url: string | null;
 };
 
 const empty = (): FormState => ({
@@ -48,6 +50,8 @@ const empty = (): FormState => ({
   travel_fare: "",
   other_items: [],
   notes: "",
+  lodging_receipt_url: null,
+  travel_fare_receipt_url: null,
 });
 
 const num = (v: string | number) => (v === "" || v == null ? 0 : Number(v) || 0);
@@ -93,7 +97,7 @@ function Expenses() {
   function openEdit(e: TravelExpense) {
     setEditing(e);
     const items = Array.isArray(e.other_expenses_items) && e.other_expenses_items.length > 0
-      ? e.other_expenses_items.map((i) => ({ category: i.category, amount: String(i.amount ?? ""), note: i.note ?? "" }))
+      ? e.other_expenses_items.map((i) => ({ category: i.category, amount: String(i.amount ?? ""), note: i.note ?? "", receipt_url: i.receipt_url ?? null }))
       : (num(e.other_expense) > 0
           ? [{ category: "Misc", amount: String(e.other_expense), note: e.other_expense_note ?? "" }]
           : []);
@@ -107,12 +111,14 @@ function Expenses() {
       travel_fare: String(e.travel_fare ?? ""),
       other_items: items,
       notes: e.notes ?? "",
+      lodging_receipt_url: e.lodging_receipt_url ?? null,
+      travel_fare_receipt_url: e.travel_fare_receipt_url ?? null,
     });
     setOpen(true);
   }
 
   function addOtherItem() {
-    setForm((f) => ({ ...f, other_items: [...f.other_items, { category: OTHER_CATEGORIES[0], amount: "", note: "" }] }));
+    setForm((f) => ({ ...f, other_items: [...f.other_items, { category: OTHER_CATEGORIES[0], amount: "", note: "", receipt_url: null }] }));
   }
   function updateOtherItem(idx: number, patch: Partial<OtherItem>) {
     setForm((f) => ({ ...f, other_items: f.other_items.map((i, k) => k === idx ? { ...i, ...patch } : i) }));
@@ -137,7 +143,7 @@ function Expenses() {
       }
       const items = form.other_items
         .filter((i) => num(i.amount) > 0)
-        .map((i) => ({ category: i.category, amount: num(i.amount), note: i.note || null }));
+        .map((i) => ({ category: i.category, amount: num(i.amount), note: i.note || null, receipt_url: i.receipt_url || null }));
       const otherTotalNum = items.reduce((s, i) => s + i.amount, 0);
       const summaryNote = items.map((i) => `${i.category}${i.note ? ` (${i.note})` : ""}: ${i.amount.toFixed(2)}`).join("; ") || null;
       const payload = {
@@ -152,6 +158,8 @@ function Expenses() {
         other_expense_note: summaryNote,
         other_expenses_items: items,
         notes: form.notes || null,
+        lodging_receipt_url: form.lodging_receipt_url,
+        travel_fare_receipt_url: form.travel_fare_receipt_url,
       };
       if (editing) {
         const { error } = await supabase.from("travelling_expenses").update(payload).eq("id", editing.id);
@@ -302,9 +310,19 @@ function Expenses() {
             </Field>
             <Field label="Lodging">
               <Input type="number" min="0" step="0.01" value={form.lodging_expense} onChange={(e) => setForm({ ...form, lodging_expense: e.target.value })} placeholder="0.00" />
+              <ReceiptInput
+                userId={user!.id}
+                value={form.lodging_receipt_url}
+                onChange={(url) => setForm((f) => ({ ...f, lodging_receipt_url: url }))}
+              />
             </Field>
             <Field label="Train / Air Fare">
               <Input type="number" min="0" step="0.01" value={form.travel_fare} onChange={(e) => setForm({ ...form, travel_fare: e.target.value })} placeholder="0.00" />
+              <ReceiptInput
+                userId={user!.id}
+                value={form.travel_fare_receipt_url}
+                onChange={(url) => setForm((f) => ({ ...f, travel_fare_receipt_url: url }))}
+              />
             </Field>
             <div className="md:col-span-2 space-y-2">
               <div className="flex items-center justify-between">
@@ -337,6 +355,13 @@ function Expenses() {
                   <Button type="button" size="icon" variant="ghost" className="col-span-1" onClick={() => removeOtherItem(idx)}>
                     <X className="h-4 w-4 text-destructive" />
                   </Button>
+                  <div className="col-span-12 -mt-1">
+                    <ReceiptInput
+                      userId={user!.id}
+                      value={item.receipt_url ?? null}
+                      onChange={(url) => updateOtherItem(idx, { receipt_url: url })}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
@@ -363,6 +388,80 @@ function Field({ label, children, full }: { label: string; children: React.React
     <div className={`space-y-1.5 ${full ? "md:col-span-2" : ""}`}>
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       {children}
+    </div>
+  );
+}
+
+function ReceiptInput({
+  userId,
+  value,
+  onChange,
+}: {
+  userId: string;
+  value: string | null;
+  onChange: (url: string | null) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFile(file: File) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Receipt must be under 5 MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "bin";
+      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("expense-receipts").upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (error) throw error;
+      onChange(path);
+      toast.success("Receipt uploaded");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function viewReceipt() {
+    if (!value) return;
+    const { data, error } = await supabase.storage.from("expense-receipts").createSignedUrl(value, 60 * 10);
+    if (error || !data) return toast.error(error?.message ?? "Could not open receipt");
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  }
+
+  return (
+    <div className="flex items-center gap-2 mt-1.5 text-xs">
+      {value ? (
+        <>
+          <button type="button" onClick={viewReceipt} className="flex items-center gap-1 text-primary hover:underline">
+            <Paperclip className="h-3.5 w-3.5" /> View receipt
+          </button>
+          <button type="button" onClick={() => onChange(null)} className="text-muted-foreground hover:text-destructive">
+            Remove
+          </button>
+        </>
+      ) : (
+        <label className="flex items-center gap-1 cursor-pointer text-muted-foreground hover:text-primary">
+          <Upload className="h-3.5 w-3.5" />
+          {uploading ? "Uploading…" : "Attach receipt"}
+          <input
+            type="file"
+            accept="image/*,application/pdf"
+            className="hidden"
+            disabled={uploading}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleFile(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      )}
     </div>
   );
 }
