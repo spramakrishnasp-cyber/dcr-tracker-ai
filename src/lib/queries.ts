@@ -31,6 +31,7 @@ export type CallReport = {
   order_status: "Interested" | "Trial Required" | "Follow-up Needed" | "Order Confirmed" | "No Response";
   meeting_outcome: string | null;
   next_follow_up: string | null;
+  next_follow_up_time: string | null;
   location: string | null;
   attachment_url: string | null;
   created_at: string;
@@ -49,7 +50,9 @@ export type TravelExpense = {
   other_expense: number;
   other_expense_note: string | null;
   details: string | null;
-  other_expenses_items: { category: string; amount: number; note?: string | null }[];
+  other_expenses_items: { category: string; amount: number; note?: string | null; receipt_url?: string | null }[];
+  lodging_receipt_url: string | null;
+  travel_fare_receipt_url: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -86,5 +89,5 @@ export async function fetchExpenses() {
     .select("*")
     .order("expense_date", { ascending: false });
   if (error) throw error;
-  return data as TravelExpense[];
+  return data as unknown as TravelExpense[];
 }
