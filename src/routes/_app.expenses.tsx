@@ -310,9 +310,19 @@ function Expenses() {
             </Field>
             <Field label="Lodging">
               <Input type="number" min="0" step="0.01" value={form.lodging_expense} onChange={(e) => setForm({ ...form, lodging_expense: e.target.value })} placeholder="0.00" />
+              <ReceiptInput
+                userId={user!.id}
+                value={form.lodging_receipt_url}
+                onChange={(url) => setForm((f) => ({ ...f, lodging_receipt_url: url }))}
+              />
             </Field>
             <Field label="Train / Air Fare">
               <Input type="number" min="0" step="0.01" value={form.travel_fare} onChange={(e) => setForm({ ...form, travel_fare: e.target.value })} placeholder="0.00" />
+              <ReceiptInput
+                userId={user!.id}
+                value={form.travel_fare_receipt_url}
+                onChange={(url) => setForm((f) => ({ ...f, travel_fare_receipt_url: url }))}
+              />
             </Field>
             <div className="md:col-span-2 space-y-2">
               <div className="flex items-center justify-between">
@@ -345,6 +355,13 @@ function Expenses() {
                   <Button type="button" size="icon" variant="ghost" className="col-span-1" onClick={() => removeOtherItem(idx)}>
                     <X className="h-4 w-4 text-destructive" />
                   </Button>
+                  <div className="col-span-12 -mt-1">
+                    <ReceiptInput
+                      userId={user!.id}
+                      value={item.receipt_url ?? null}
+                      onChange={(url) => updateOtherItem(idx, { receipt_url: url })}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
@@ -371,6 +388,80 @@ function Field({ label, children, full }: { label: string; children: React.React
     <div className={`space-y-1.5 ${full ? "md:col-span-2" : ""}`}>
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       {children}
+    </div>
+  );
+}
+
+function ReceiptInput({
+  userId,
+  value,
+  onChange,
+}: {
+  userId: string;
+  value: string | null;
+  onChange: (url: string | null) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFile(file: File) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Receipt must be under 5 MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "bin";
+      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from("expense-receipts").upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (error) throw error;
+      onChange(path);
+      toast.success("Receipt uploaded");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function viewReceipt() {
+    if (!value) return;
+    const { data, error } = await supabase.storage.from("expense-receipts").createSignedUrl(value, 60 * 10);
+    if (error || !data) return toast.error(error?.message ?? "Could not open receipt");
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  }
+
+  return (
+    <div className="flex items-center gap-2 mt-1.5 text-xs">
+      {value ? (
+        <>
+          <button type="button" onClick={viewReceipt} className="flex items-center gap-1 text-primary hover:underline">
+            <Paperclip className="h-3.5 w-3.5" /> View receipt
+          </button>
+          <button type="button" onClick={() => onChange(null)} className="text-muted-foreground hover:text-destructive">
+            Remove
+          </button>
+        </>
+      ) : (
+        <label className="flex items-center gap-1 cursor-pointer text-muted-foreground hover:text-primary">
+          <Upload className="h-3.5 w-3.5" />
+          {uploading ? "Uploading…" : "Attach receipt"}
+          <input
+            type="file"
+            accept="image/*,application/pdf"
+            className="hidden"
+            disabled={uploading}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleFile(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      )}
     </div>
   );
 }
