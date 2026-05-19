@@ -14,7 +14,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, FileDown, Pencil, Trash2, Wallet, X } from "lucide-react";
+import { Plus, FileDown, Pencil, Trash2, Wallet, X, Paperclip, Upload } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { exportExpensesPdf } from "@/lib/pdf";
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_app/expenses")({
 });
 
 const OTHER_CATEGORIES = ["Mobile bill", "Cab", "Food bill", "Toll charges", "Courier", "Misc"] as const;
-type OtherItem = { category: string; amount: string; note: string };
+type OtherItem = { category: string; amount: string; note: string; receipt_url?: string | null };
 
 type FormState = {
   expense_date: string;
@@ -36,6 +36,8 @@ type FormState = {
   travel_fare: string;
   other_items: OtherItem[];
   notes: string;
+  lodging_receipt_url: string | null;
+  travel_fare_receipt_url: string | null;
 };
 
 const empty = (): FormState => ({
@@ -48,6 +50,8 @@ const empty = (): FormState => ({
   travel_fare: "",
   other_items: [],
   notes: "",
+  lodging_receipt_url: null,
+  travel_fare_receipt_url: null,
 });
 
 const num = (v: string | number) => (v === "" || v == null ? 0 : Number(v) || 0);
@@ -93,7 +97,7 @@ function Expenses() {
   function openEdit(e: TravelExpense) {
     setEditing(e);
     const items = Array.isArray(e.other_expenses_items) && e.other_expenses_items.length > 0
-      ? e.other_expenses_items.map((i) => ({ category: i.category, amount: String(i.amount ?? ""), note: i.note ?? "" }))
+      ? e.other_expenses_items.map((i) => ({ category: i.category, amount: String(i.amount ?? ""), note: i.note ?? "", receipt_url: i.receipt_url ?? null }))
       : (num(e.other_expense) > 0
           ? [{ category: "Misc", amount: String(e.other_expense), note: e.other_expense_note ?? "" }]
           : []);
@@ -107,12 +111,14 @@ function Expenses() {
       travel_fare: String(e.travel_fare ?? ""),
       other_items: items,
       notes: e.notes ?? "",
+      lodging_receipt_url: e.lodging_receipt_url ?? null,
+      travel_fare_receipt_url: e.travel_fare_receipt_url ?? null,
     });
     setOpen(true);
   }
 
   function addOtherItem() {
-    setForm((f) => ({ ...f, other_items: [...f.other_items, { category: OTHER_CATEGORIES[0], amount: "", note: "" }] }));
+    setForm((f) => ({ ...f, other_items: [...f.other_items, { category: OTHER_CATEGORIES[0], amount: "", note: "", receipt_url: null }] }));
   }
   function updateOtherItem(idx: number, patch: Partial<OtherItem>) {
     setForm((f) => ({ ...f, other_items: f.other_items.map((i, k) => k === idx ? { ...i, ...patch } : i) }));
@@ -137,7 +143,7 @@ function Expenses() {
       }
       const items = form.other_items
         .filter((i) => num(i.amount) > 0)
-        .map((i) => ({ category: i.category, amount: num(i.amount), note: i.note || null }));
+        .map((i) => ({ category: i.category, amount: num(i.amount), note: i.note || null, receipt_url: i.receipt_url || null }));
       const otherTotalNum = items.reduce((s, i) => s + i.amount, 0);
       const summaryNote = items.map((i) => `${i.category}${i.note ? ` (${i.note})` : ""}: ${i.amount.toFixed(2)}`).join("; ") || null;
       const payload = {
@@ -152,6 +158,8 @@ function Expenses() {
         other_expense_note: summaryNote,
         other_expenses_items: items,
         notes: form.notes || null,
+        lodging_receipt_url: form.lodging_receipt_url,
+        travel_fare_receipt_url: form.travel_fare_receipt_url,
       };
       if (editing) {
         const { error } = await supabase.from("travelling_expenses").update(payload).eq("id", editing.id);
