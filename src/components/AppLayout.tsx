@@ -38,20 +38,21 @@ export function AppLayout() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:sticky top-0 h-screen z-40 bg-card border-r border-border w-64 transition-transform shrink-0",
+          "fixed lg:sticky top-0 h-screen z-40 w-64 transition-transform shrink-0 text-[color:var(--sidebar-navy-foreground)]",
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
+        style={{ background: "var(--sidebar-navy)" }}
       >
-        <div className="h-16 flex items-center gap-2 px-6 border-b border-border">
+        <div className="h-16 flex items-center gap-2 px-6 border-b border-white/10">
           <div
-            className="h-9 w-9 rounded-lg flex items-center justify-center text-primary-foreground font-bold"
+            className="h-9 w-9 rounded-md flex items-center justify-center text-primary-foreground font-bold text-sm"
             style={{ background: "var(--gradient-primary)" }}
           >
             DCR
           </div>
           <div>
             <div className="text-sm font-semibold leading-tight">Sales DCR</div>
-            <div className="text-[11px] text-muted-foreground">Call Reporting</div>
+            <div className="text-[11px] text-white/60">Call Reporting</div>
           </div>
         </div>
         <nav className="p-3 space-y-1">
@@ -65,10 +66,10 @@ export function AppLayout() {
                 to={item.to}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors border-l-2",
                   active
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-foreground hover:bg-accent",
+                    ? "bg-white/10 text-white border-l-[color:var(--primary)]"
+                    : "text-white/75 border-l-transparent hover:bg-white/5 hover:text-white",
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -77,22 +78,23 @@ export function AppLayout() {
             );
           })}
         </nav>
-        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-border bg-card">
+        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-white/10">
           <div className="flex items-center gap-2 px-2 py-2">
-            <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-xs font-semibold text-secondary-foreground">
+            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-xs font-semibold text-primary-foreground">
               {(profile?.full_name || profile?.email || "?").slice(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate">
+              <div className="text-sm font-medium truncate text-white">
                 {profile?.full_name || "User"}
               </div>
-              <div className="text-[11px] text-muted-foreground truncate">
+              <div className="text-[11px] text-white/60 truncate">
                 {isAdmin ? "Admin" : "Employee"}
               </div>
             </div>
             <Button
               size="icon"
               variant="ghost"
+              className="text-white/70 hover:text-white hover:bg-white/10"
               onClick={async () => {
                 await signOut();
                 navigate({ to: "/login" });
