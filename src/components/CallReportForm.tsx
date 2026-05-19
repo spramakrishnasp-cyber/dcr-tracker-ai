@@ -60,6 +60,25 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
         const { error } = await supabase.from("call_reports").insert({ ...payload, user_id: user!.id });
         if (error) throw error;
       }
+
+      // Fire follow-up webhook when a follow-up date is set
+      if (form.next_follow_up) {
+        try {
+          const customer = customers.find((c) => c.id === form.customer_id);
+          await fetch("https://hook.eu1.make.com/wyajdhgby9bus2a3e4eaeqb8ktuddesa", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              customerName: customer?.customer_name ?? "",
+              followUpDateTime: `${form.next_follow_up}T${form.call_time || "09:00"}`,
+              notes: form.discussion || form.meeting_outcome || "",
+              phone: customer?.mobile ?? "",
+            }),
+          });
+        } catch (e) {
+          console.error("Follow-up webhook failed", e);
+        }
+      }
     },
     onSuccess: () => {
       toast.success(isEdit ? "Report updated" : "Report saved");
