@@ -12,13 +12,16 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { CalendarClock, User, ClipboardList, MapPin, Save, X, Check, ChevronsUpDown } from "lucide-react";
+import { CalendarClock, User, ClipboardList, MapPin, Save, X, Check, ChevronsUpDown, Plus } from "lucide-react";
 
 const meetingTypes = ["Physical Meeting", "Phone Call", "Video Call", "Follow-up"] as const;
 const orderStatuses = ["Interested", "Trial Required", "Follow-up Needed", "Order Confirmed", "No Response"] as const;
@@ -30,6 +33,7 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
   const navigate = useNavigate();
   const isEdit = !!existing;
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
+  const [newCustomerOpen, setNewCustomerOpen] = useState(false);
 
   const [form, setForm] = useState({
     customer_id: existing?.customer_id ?? "",
@@ -180,7 +184,11 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
                 <Command>
                   <CommandInput placeholder="Search customers..." />
                   <CommandList>
-                    <CommandEmpty>No customer found.</CommandEmpty>
+                    <CommandEmpty>
+                      <div className="py-2 text-sm text-muted-foreground">
+                        No customer found.
+                      </div>
+                    </CommandEmpty>
                     <CommandGroup>
                       {customers.map((c) => (
                         <CommandItem
@@ -198,8 +206,36 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
                     </CommandGroup>
                   </CommandList>
                 </Command>
+                <div className="border-t border-border p-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setCustomerPickerOpen(false);
+                      setNewCustomerOpen(true);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Add new customer
+                  </Button>
+                </div>
               </PopoverContent>
             </Popover>
+            <Dialog open={newCustomerOpen} onOpenChange={setNewCustomerOpen}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>New Customer</DialogTitle>
+                </DialogHeader>
+                <QuickCustomerForm
+                  onCreated={(id) => {
+                    setForm((f) => ({ ...f, customer_id: id }));
+                    setNewCustomerOpen(false);
+                  }}
+                  onCancel={() => setNewCustomerOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
           </Field>
           <Field label="Product Discussed">
             <Input value={form.product_discussed} onChange={(e) => setForm({ ...form, product_discussed: e.target.value })} />
@@ -252,6 +288,67 @@ function Field({ label, children, full }: { label: string; children: React.React
     <div className={`space-y-1.5 ${full ? "md:col-span-2" : ""}`}>
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
       {children}
+    </div>
+  );
+}
+
+function QuickCustomerForm({ onCreated, onCancel }: { onCreated: (id: string) => void; onCancel: () => void }) {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const [form, setForm] = useState({
+    customer_name: "",
+    company_name: "",
+    mobile: "",
+    email: "",
+    city: "",
+  });
+  const create = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .from("customers")
+        .insert({ ...form, created_by: user!.id, status: "Active" })
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data.id as string;
+    },
+    onSuccess: (id) => {
+      toast.success("Customer created");
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      onCreated(id);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5 col-span-2">
+          <Label className="text-xs">Customer Name *</Label>
+          <Input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Company</Label>
+          <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Mobile</Label>
+          <Input value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Email</Label>
+          <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">City</Label>
+          <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+        </div>
+      </div>
+      <div className="flex justify-end gap-2 pt-1">
+        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+        <Button type="button" disabled={!form.customer_name || create.isPending} onClick={() => create.mutate()}>
+          {create.isPending ? "Saving…" : "Create & Select"}
+        </Button>
+      </div>
     </div>
   );
 }
