@@ -291,3 +291,64 @@ function Field({ label, children, full }: { label: string; children: React.React
     </div>
   );
 }
+
+function QuickCustomerForm({ onCreated, onCancel }: { onCreated: (id: string) => void; onCancel: () => void }) {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const [form, setForm] = useState({
+    customer_name: "",
+    company_name: "",
+    mobile: "",
+    email: "",
+    city: "",
+  });
+  const create = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .from("customers")
+        .insert({ ...form, created_by: user!.id, status: "Active" })
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data.id as string;
+    },
+    onSuccess: (id) => {
+      toast.success("Customer created");
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      onCreated(id);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5 col-span-2">
+          <Label className="text-xs">Customer Name *</Label>
+          <Input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Company</Label>
+          <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Mobile</Label>
+          <Input value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Email</Label>
+          <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">City</Label>
+          <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+        </div>
+      </div>
+      <div className="flex justify-end gap-2 pt-1">
+        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+        <Button type="button" disabled={!form.customer_name || create.isPending} onClick={() => create.mutate()}>
+          {create.isPending ? "Saving…" : "Create & Select"}
+        </Button>
+      </div>
+    </div>
+  );
+}
