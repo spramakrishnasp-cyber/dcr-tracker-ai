@@ -10,11 +10,15 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { CalendarClock, User, ClipboardList, MapPin, Save, X } from "lucide-react";
+import { CalendarClock, User, ClipboardList, MapPin, Save, X, Check, ChevronsUpDown } from "lucide-react";
 
 const meetingTypes = ["Physical Meeting", "Phone Call", "Video Call", "Follow-up"] as const;
 const orderStatuses = ["Interested", "Trial Required", "Follow-up Needed", "Order Confirmed", "No Response"] as const;
@@ -25,6 +29,7 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const isEdit = !!existing;
+  const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
 
   const [form, setForm] = useState({
     customer_id: existing?.customer_id ?? "",
@@ -156,15 +161,45 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
 
         <Section icon={<User className="h-4 w-4" />} title="Customer & Discussion">
           <Field label="Customer *" full>
-            <Select value={form.customer_id} onValueChange={(v) => setForm({ ...form, customer_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Select a customer" /></SelectTrigger>
-              <SelectContent>
-                {customers.length === 0 && <div className="px-2 py-3 text-sm text-muted-foreground">Add customers first</div>}
-                {customers.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.customer_name}{c.company_name ? ` — ${c.company_name}` : ""}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={customerPickerOpen} onOpenChange={setCustomerPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={customerPickerOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  {selectedCustomer
+                    ? `${selectedCustomer.customer_name}${selectedCustomer.company_name ? ` — ${selectedCustomer.company_name}` : ""}`
+                    : "Select a customer"}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
+                <Command>
+                  <CommandInput placeholder="Search customers..." />
+                  <CommandList>
+                    <CommandEmpty>No customer found.</CommandEmpty>
+                    <CommandGroup>
+                      {customers.map((c) => (
+                        <CommandItem
+                          key={c.id}
+                          value={`${c.customer_name} ${c.company_name ?? ""} ${c.mobile ?? ""} ${c.city ?? ""}`}
+                          onSelect={() => {
+                            setForm({ ...form, customer_id: c.id });
+                            setCustomerPickerOpen(false);
+                          }}
+                        >
+                          <Check className={`mr-2 h-4 w-4 ${form.customer_id === c.id ? "opacity-100" : "opacity-0"}`} />
+                          <span>{c.customer_name}{c.company_name ? ` — ${c.company_name}` : ""}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </Field>
           <Field label="Product Discussed">
             <Input value={form.product_discussed} onChange={(e) => setForm({ ...form, product_discussed: e.target.value })} />
