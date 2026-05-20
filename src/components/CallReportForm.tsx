@@ -12,13 +12,16 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { CalendarClock, User, ClipboardList, MapPin, Save, X, Check, ChevronsUpDown } from "lucide-react";
+import { CalendarClock, User, ClipboardList, MapPin, Save, X, Check, ChevronsUpDown, Plus } from "lucide-react";
 
 const meetingTypes = ["Physical Meeting", "Phone Call", "Video Call", "Follow-up"] as const;
 const orderStatuses = ["Interested", "Trial Required", "Follow-up Needed", "Order Confirmed", "No Response"] as const;
@@ -30,6 +33,7 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
   const navigate = useNavigate();
   const isEdit = !!existing;
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
+  const [newCustomerOpen, setNewCustomerOpen] = useState(false);
 
   const [form, setForm] = useState({
     customer_id: existing?.customer_id ?? "",
@@ -180,7 +184,11 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
                 <Command>
                   <CommandInput placeholder="Search customers..." />
                   <CommandList>
-                    <CommandEmpty>No customer found.</CommandEmpty>
+                    <CommandEmpty>
+                      <div className="py-2 text-sm text-muted-foreground">
+                        No customer found.
+                      </div>
+                    </CommandEmpty>
                     <CommandGroup>
                       {customers.map((c) => (
                         <CommandItem
@@ -198,8 +206,36 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
                     </CommandGroup>
                   </CommandList>
                 </Command>
+                <div className="border-t border-border p-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setCustomerPickerOpen(false);
+                      setNewCustomerOpen(true);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Add new customer
+                  </Button>
+                </div>
               </PopoverContent>
             </Popover>
+            <Dialog open={newCustomerOpen} onOpenChange={setNewCustomerOpen}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>New Customer</DialogTitle>
+                </DialogHeader>
+                <QuickCustomerForm
+                  onCreated={(id) => {
+                    setForm((f) => ({ ...f, customer_id: id }));
+                    setNewCustomerOpen(false);
+                  }}
+                  onCancel={() => setNewCustomerOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
           </Field>
           <Field label="Product Discussed">
             <Input value={form.product_discussed} onChange={(e) => setForm({ ...form, product_discussed: e.target.value })} />
