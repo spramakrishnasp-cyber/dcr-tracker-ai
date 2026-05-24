@@ -76,15 +76,21 @@ export function CallReportForm({ existing }: { existing?: CallReport }) {
       if (form.next_follow_up) {
         try {
           const customer = customers.find((c) => c.id === form.customer_id);
-          const followUpTime = form.next_follow_up_time || "09:00";
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, whatsapp_number")
+            .eq("id", user!.id)
+            .maybeSingle();
           await fetch("https://hook.eu1.make.com/wyajdhgby9bus2a3e4eaeqb8ktuddesa", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              customerName: customer?.customer_name ?? "",
-              followUpDateTime: `${form.next_follow_up}T${followUpTime}`,
-              notes: form.discussion || form.meeting_outcome || "",
-              phone: customer?.mobile ?? "",
+              employee_name: profile?.full_name ?? "",
+              customer_name: customer?.customer_name ?? "",
+              next_follow_up: form.next_follow_up,
+              call_date: form.call_date,
+              message: form.discussion || form.meeting_outcome || "",
+              whatsapp_number: profile?.whatsapp_number ?? "",
             }),
           });
         } catch (e) {
