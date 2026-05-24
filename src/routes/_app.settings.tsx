@@ -84,10 +84,12 @@ function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         mode: "no-cors",
         body: JSON.stringify({
-          test: true,
-          message: `Test reminder from ${profile?.full_name || "Sales DCR"}`,
-          whatsapp_number: whatsapp || null,
-          timestamp: new Date().toISOString(),
+          employee_name: profile?.full_name || "Test Employee",
+          customer_name: "Sample Customer (Sample Co)",
+          next_follow_up: new Date(Date.now() + 86400000).toISOString().split("T")[0],
+          call_date: new Date().toISOString().split("T")[0],
+          message: "This is a test reminder message from the follow-up system.",
+          whatsapp_number: whatsapp || "+1234567890",
         }),
       });
       toast.success("Test payload sent. Check your Zap/automation history.");
