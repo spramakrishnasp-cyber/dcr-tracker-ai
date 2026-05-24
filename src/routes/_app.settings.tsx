@@ -156,7 +156,7 @@ function SettingsPage() {
             onChange={(e) => setWebhook(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            We POST JSON: <code>{`{ whatsapp_number, employee_name, customer_name, call_date, next_follow_up, kind, message }`}</code>
+            We POST JSON: <code>{`{ employee_name, customer_name, next_follow_up, call_date, message, whatsapp_number }`}</code>
           </p>
         </div>
 
