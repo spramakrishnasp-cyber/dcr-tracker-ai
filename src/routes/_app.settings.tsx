@@ -84,10 +84,12 @@ function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         mode: "no-cors",
         body: JSON.stringify({
-          test: true,
-          message: `Test reminder from ${profile?.full_name || "Sales DCR"}`,
-          whatsapp_number: whatsapp || null,
-          timestamp: new Date().toISOString(),
+          employee_name: profile?.full_name || "Test Employee",
+          customer_name: "Sample Customer (Sample Co)",
+          next_follow_up: new Date(Date.now() + 86400000).toISOString().split("T")[0],
+          call_date: new Date().toISOString().split("T")[0],
+          message: "This is a test reminder message from the follow-up system.",
+          whatsapp_number: whatsapp || "+1234567890",
         }),
       });
       toast.success("Test payload sent. Check your Zap/automation history.");
@@ -154,7 +156,7 @@ function SettingsPage() {
             onChange={(e) => setWebhook(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            We POST JSON: <code>{`{ whatsapp_number, employee_name, customer_name, call_date, next_follow_up, kind, message }`}</code>
+            We POST JSON: <code>{`{ employee_name, customer_name, next_follow_up, call_date, message, whatsapp_number }`}</code>
           </p>
         </div>
 
